@@ -1,707 +1,454 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>강남대학교 달구지 통합 스마트 시스템</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        knu: {
-                            50: '#f0f4fa',
-                            100: '#dbe5f5',
-                            500: '#1b4998', // 강남대학교 대표 시그니처 블루
-                            600: '#153978',
-                            700: '#102b5c',
-                            800: '#0b1d3f',
-                            900: '#060f22',
-                        }
-                    }
-                }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>강남대학교 달구지 스마트 셔틀</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            knu: {
+              blue: '#003A70',
+              lightBlue: '#005bac',
+              gold: '#C5A059',
+              bg: '#F4F6F9'
             }
+          }
         }
-    </script>
-    <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            50% { transform: scale(1.2); opacity: 0.3; }
-            100% { transform: scale(0.95); opacity: 0.8; }
-        }
-        .pulse-ring-effect {
-            animation: pulse-ring 2s infinite ease-in-out;
-        }
-
-        @keyframes qr-scan {
-            0%, 100% { top: 0%; }
-            50% { top: 92%; }
-        }
-        .scan-line {
-            animation: qr-scan 2.5s infinite ease-in-out;
-        }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(0.98); }
+    }
+    .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes scan-line {
+      0% { top: 0%; }
+      100% { top: 100%; }
+    }
+    .scan-line { animation: scan-line 2s linear infinite; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-0 md:p-6 text-slate-800">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans min-h-screen flex justify-center items-center p-0 sm:p-4 transition-colors duration-200">
 
-    <div class="w-full max-w-md h-[100vh] md:h-[880px] bg-slate-50 md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col border-0 md:border-8 border-slate-900 relative">
+  <div class="w-full sm:max-w-md h-screen sm:h-[844px] bg-white dark:bg-gray-800 sm:rounded-[36px] shadow-2xl overflow-hidden flex flex-col relative border-0 sm:border-8 border-gray-800 dark:border-gray-700">
 
-        <!-- Top Status Bar (Mobile Style) -->
-        <div class="bg-knu-700 text-white px-5 pt-3 pb-2 flex justify-between items-center text-xs font-semibold select-none z-30">
-            <span id="current-time">09:41</span>
+    <!-- Status Bar -->
+    <div class="bg-knu-blue text-white px-6 pt-3 pb-2 flex justify-between items-center text-xs select-none">
+      <span id="current-time">09:41</span>
+      <div class="flex items-center space-x-2">
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-full"></i>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="bg-knu-blue text-white px-5 pb-4 pt-1 shadow-md flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+          <i class="fas fa-bus text-knu-gold text-base"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight tracking-tight">강남대 달구지</h1>
+          <p class="text-[10px] text-blue-200 font-light">KANGNAM SHUTTLE BUS</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="theme-toggle" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-xs text-blue-100 transition">
+          <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
+        <button class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-xs text-blue-100 relative">
+          <i class="fas fa-bell"></i>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Route Selector -->
+    <div class="bg-blue-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-blue-100 dark:border-gray-600 flex items-center justify-between text-xs">
+      <span class="text-gray-500 dark:text-gray-300 font-medium">노선 선택</span>
+      <select id="route-select" class="bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 font-bold border border-blue-200 dark:border-gray-600 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-knu-blue">
+        <option value="giheung">기흥역 4번출구 ↔ 캠퍼스</option>
+        <option value="starbucks">스타벅스 앞 ↔ 캠퍼스</option>
+      </select>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-y-auto no-scrollbar pb-16 bg-knu-bg dark:bg-gray-900">
+
+      <!-- TAB 1: Live Map & Status -->
+      <div id="tab-home" class="tab-content p-4 space-y-4">
+        
+        <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3 flex items-start space-x-2.5 text-xs text-amber-800 dark:text-amber-300">
+          <i class="fas fa-exclamation-triangle text-amber-500 text-sm mt-0.5 shrink-0"></i>
+          <div>
+            <span class="font-bold">기흥역 노선 주의사항:</span>
+            <span>만석 시 강남대역 무정차 통과될 수 있습니다.</span>
+          </div>
+        </div>
+
+        <!-- Next Bus Live Banner -->
+        <div class="bg-gradient-to-r from-knu-blue to-knu-lightBlue text-white rounded-2xl p-4 shadow-lg relative overflow-hidden">
+          <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl text-white pointer-events-none">
+            <i class="fas fa-bus"></i>
+          </div>
+          <div class="flex justify-between items-start mb-2">
+            <span class="bg-white/20 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-sm">실시간 운행 중</span>
+            <span class="text-xs text-blue-100 font-mono" id="live-eta-clock">다음 출발 09:30</span>
+          </div>
+          <div class="flex items-baseline space-x-2 mb-3">
+            <span class="text-2xl font-extrabold" id="bus-target-station">기흥역 4번출구</span>
+            <span class="text-sm font-medium text-blue-200">출발 예정</span>
+          </div>
+          <div class="bg-white/10 rounded-xl p-3 backdrop-blur-md border border-white/10 space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-blue-100">잔여 좌석 (1호차)</span>
+              <span class="font-bold text-amber-300" id="seat-count">14석 / 45석</span>
+            </div>
+            <div class="w-full bg-black/20 rounded-full h-2 overflow-hidden">
+              <div class="bg-amber-400 h-2 rounded-full transition-all duration-500" style="width: 31%;"></div>
+            </div>
+            <div class="flex justify-between items-center text-[11px] text-blue-200 pt-1">
+              <span><i class="fas fa-map-marker-alt text-amber-400 mr-1"></i>현재 위치: 강남대역 이동 중</span>
+              <span class="text-emerald-300 font-semibold"><i class="fas fa-wifi text-[9px] mr-1"></i>GPS 수신 정상</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route Visualization Map Component -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center">
+              <i class="fas fa-route text-knu-blue dark:text-blue-400 mr-2"></i>실시간 정류장 노선도
+            </h3>
+            <span class="text-[11px] text-gray-400">자동 갱신 (3초)</span>
+          </div>
+
+          <!-- Vertical Timeline Nodes -->
+          <div class="relative pl-6 space-y-5 my-2 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-1 before:bg-blue-100 dark:before:bg-gray-700" id="route-timeline">
+            <!-- Dynamic timeline rendered via JS -->
+          </div>
+        </div>
+
+        <!-- AI Forecast Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-knu-blue dark:text-blue-400 flex items-center">
+              <i class="fas fa-robot mr-1.5"></i>AI 탑승 예상 리포트
+            </span>
+            <span class="text-[10px] bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full">실시간 예측</span>
+          </div>
+          <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+            현재 화요일 1교시 수업 시간대 영향으로 <span class="font-bold text-knu-blue dark:text-blue-300">기흥역 출발 버스 혼잡도</span>가 높습니다. 강남대역 이용을 권장합니다.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- TAB 2: Timetable & Pass History -->
+      <div id="tab-timetable" class="tab-content p-4 space-y-4 hidden">
+        
+        <!-- Day Toggle -->
+        <div class="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-xl text-xs font-bold">
+          <button id="btn-mon-fri" class="flex-1 py-2 rounded-lg bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 shadow-sm transition">월 · 금요일</button>
+          <button id="btn-tue-thu" class="flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition">화 · 수 · 목요일 (증차)</button>
+        </div>
+
+        <!-- Schedule Notice -->
+        <div class="bg-blue-50 dark:bg-gray-800/80 p-3 rounded-xl border border-blue-100 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 flex justify-between items-center">
+          <div>
+            <i class="far fa-calendar-alt text-knu-blue dark:text-blue-400 mr-1.5"></i>
+            <span>2026-2학기 운행기간: 09.01 ~ 12.16</span>
+          </div>
+          <span class="text-[10px] text-gray-400">주말/공휴일 미운행</span>
+        </div>
+
+        <!-- Main Timetable Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 flex justify-between text-xs font-bold text-gray-500 dark:text-gray-300">
+            <span>출발 정류장 / 시간</span>
+            <span>운행 상태 / 이력</span>
+          </div>
+          <div class="divide-y divide-gray-100 dark:divide-gray-700 text-xs" id="timetable-list">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 3: Student ID Pass (Refined Premium Look) -->
+      <div id="tab-idcard" class="tab-content p-4 space-y-4 hidden">
+        
+        <!-- Premium Mobile Student Card Component -->
+        <div class="bg-gradient-to-br from-knu-blue via-[#002d57] to-[#001f3f] text-white rounded-2xl p-5 shadow-xl relative overflow-hidden border border-white/10">
+          <div class="flex justify-between items-start mb-6">
             <div class="flex items-center space-x-2">
-                <span class="bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded-full text-[10px]">강남대 KNU</span>
-                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
-                <i data-lucide="battery" class="w-4 h-4"></i>
+              <div class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
+                <i class="fas fa-university text-knu-gold text-xs"></i>
+              </div>
+              <span class="font-bold text-sm tracking-wide">강남대학교 모바일 학생증</span>
             </div>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 flex items-center">
+              <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1 animate-ping"></span>인증 활성화
+            </span>
+          </div>
+
+          <div class="flex items-center space-x-4 mb-6">
+            <div class="w-14 h-18 bg-gray-300 rounded-lg overflow-hidden border-2 border-white/20 shadow-inner flex-shrink-0">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" alt="학생 사진" class="w-full h-full object-cover">
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-blue-200">소프트웨어전공</p>
+              <h2 class="text-lg font-bold">구도경 <span class="text-xs font-normal text-blue-200">(재학생)</span></h2>
+              <p class="text-xs font-mono text-knu-gold">2026123456</p>
+            </div>
+          </div>
+
+          <!-- Dynamic Security QR Code Box -->
+          <div class="bg-white rounded-xl p-4 text-center shadow-inner relative overflow-hidden">
+            <div class="scan-line absolute left-0 right-0 h-0.5 bg-blue-500 shadow-md"></div>
+            <div class="flex justify-center mb-2">
+              <!-- Animated QR Pattern Placeholder -->
+              <div class="w-32 h-32 bg-gray-900 rounded-lg p-2 flex items-center justify-center relative">
+                <i class="fas fa-qrcode text-white text-7xl"></i>
+              </div>
+            </div>
+            <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono px-2">
+              <span>남은 시간: <strong class="text-red-500" id="qr-timer">00:28</strong></span>
+              <button class="text-knu-blue font-bold hover:underline" id="refresh-qr">
+                <i class="fas fa-sync-alt mr-1"></i>갱신
+              </button>
+            </div>
+          </div>
+
+          <!-- Seamless Tag Indicator -->
+          <div class="mt-4 bg-white/5 rounded-xl p-3 border border-white/10 flex items-center justify-between text-xs text-blue-100">
+            <div class="flex items-center space-x-2">
+              <i class="fas fa-podcast text-amber-400 text-sm animate-pulse"></i>
+              <span>단말기 근처 태그 가능</span>
+            </div>
+            <span class="text-[10px] text-blue-300 font-mono">NFC / BLE AUTO</span>
+          </div>
+
         </div>
 
-        <!-- Main Header -->
-        <header class="bg-knu-700 text-white px-5 pb-3 flex justify-between items-center shadow-md z-20">
-            <div>
-                <div class="flex items-center space-x-2">
-                    <i data-lucide="bus" class="w-6 h-6 text-yellow-400"></i>
-                    <h1 class="font-bold text-xl tracking-tight">강남대 달구지</h1>
-                </div>
-                <p class="text-xs text-blue-200 mt-0.5">강남대학교 실시간 셔틀버스 스마트 앱</p>
-            </div>
-            <button onclick="switchTab('tab-ai')" class="relative p-2 rounded-full bg-knu-600 hover:bg-knu-500 transition text-white">
-                <i data-lucide="bell" class="w-5 h-5"></i>
-                <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-knu-700"></span>
-            </button>
-        </header>
-
-        <!-- Dynamic Content Body -->
-        <main class="flex-1 overflow-y-auto no-scrollbar relative bg-slate-50 pb-20">
-
-            <section id="tab-home" class="tab-content block p-4 space-y-4">
-                
-                <!-- Route Selector Tabs -->
-                <div class="bg-slate-200 p-1 rounded-2xl flex text-xs font-bold shadow-inner">
-                    <button onclick="selectRoute(1)" id="btn-route-1" class="flex-1 py-2.5 rounded-xl transition-all duration-200 bg-white text-knu-700 shadow-sm flex items-center justify-center gap-1">
-                        <i data-lucide="route" class="w-3.5 h-3.5"></i> 1노선 (기흥역)
-                    </button>
-                    <button onclick="selectRoute(2)" id="btn-route-2" class="flex-1 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
-                        <i data-lucide="navigation" class="w-3.5 h-3.5"></i> 2노선 (강남대역 스벅)
-                    </button>
-                </div>
-
-                <!-- Bus Selection & Route Info Banner -->
-                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-knu-500 flex items-center justify-center font-bold text-sm">
-                            <span id="route-bus-badge">1호</span>
-                        </div>
-                        <div>
-                            <div class="text-[11px] text-slate-500 font-medium">선택된 운행 노선</div>
-                            <div id="route-title" class="font-bold text-slate-800 text-sm">기흥역 → 강남대역 → 샬롬관 → 교육관 → 이공관</div>
-                        </div>
-                    </div>
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 flex-shrink-0">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span> 운행 중
-                    </span>
-                </div>
-
-                <!-- Live Campus Map Box -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative">
-                    <div class="p-3 bg-slate-800 text-white text-xs flex justify-between items-center">
-                        <span class="flex items-center gap-1.5 font-medium">
-                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400"></i> 노선 실시간 GPS 지도
-                        </span>
-                        <span class="text-slate-400 text-[11px]" id="map-update-time">실시간 연동 중</span>
-                    </div>
-
-                    <!-- Canvas/SVG Map Graphics for Custom Routes -->
-                    <div class="h-56 bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                        <svg id="route-svg-map" class="w-full h-full absolute inset-0" viewBox="0 0 400 250" fill="none">
-                            <!-- Dynamic Content Rendered via JavaScript -->
-                        </svg>
-
-                        <!-- Dynamic Bus Pin Overlay -->
-                        <div id="live-bus-pin" class="absolute transition-all duration-1000 ease-in-out transform -translate-x-1/2 -translate-y-1/2" style="left: 20%; top: 50%;">
-                            <div class="relative flex items-center justify-center">
-                                <span class="absolute w-10 h-10 bg-yellow-400/40 rounded-full pulse-ring-effect"></span>
-                                <div class="bg-yellow-400 text-slate-900 p-2 rounded-full shadow-lg border-2 border-white flex items-center justify-center z-10">
-                                    <i data-lucide="bus" class="w-5 h-5"></i>
-                                </div>
-                                <div id="bus-label-pin" class="absolute -bottom-6 bg-slate-900/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md">
-                                    달구지 1호차
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Map Controls -->
-                        <div class="absolute bottom-2 right-2 flex flex-col gap-1 z-10">
-                            <button class="w-8 h-8 bg-white/90 backdrop-blur rounded-lg shadow flex items-center justify-center text-slate-700 active:bg-slate-100">
-                                <i data-lucide="plus" class="w-4 h-4"></i>
-                            </button>
-                            <button class="w-8 h-8 bg-white/90 backdrop-blur rounded-lg shadow flex items-center justify-center text-slate-700 active:bg-slate-100">
-                                <i data-lucide="minus" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Live Bus Summary Bar -->
-                    <div class="p-3.5 bg-blue-50/80 border-t border-slate-100 flex items-center justify-between">
-                        <div>
-                            <div class="text-[11px] text-slate-500">현재 위치 / 다음 정류장</div>
-                            <div class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1 mt-0.5">
-                                <span id="current-stop-name" class="text-knu-600">기흥역</span>
-                                <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-400"></i>
-                                <span id="next-stop-name">강남대역 (3분 후 도착)</span>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-[11px] text-slate-500">실시간 잔여 좌석</div>
-                            <div id="live-seats-count" class="font-extrabold text-knu-600 text-base">
-                                12 <span class="text-xs font-normal text-slate-500">/ 45석</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dynamic Station ETA List -->
-                <div class="space-y-2.5">
-                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">정류장별 실시간 ETA & 잔여 좌석</h2>
-                    <div id="station-list-container" class="space-y-2">
-                        <!-- Dynamic Stations injected by JavaScript -->
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-schedule" class="tab-content hidden p-4 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="font-bold text-slate-800 text-base">시간표 & 통과 이력</h2>
-                    <span id="schedule-route-tag" class="text-xs text-knu-700 bg-blue-100 px-2.5 py-1 rounded-full font-bold">1노선 (기흥역)</span>
-                </div>
-
-                <!-- Timeline Section: Recent Passed Buses -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 class="text-xs font-bold text-knu-600 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                        <i data-lucide="history" class="w-4 h-4"></i> 최근 지나간 달구지 타임라인
-                    </h3>
-                    <div id="passed-timeline-container" class="relative pl-6 border-l-2 border-slate-200 space-y-4 my-2">
-                        <!-- Dynamic history timeline elements injected via JS -->
-                    </div>
-                </div>
-
-                <!-- Timetable List -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-3.5 bg-slate-800 text-white font-bold text-xs flex justify-between">
-                        <span>출발 예정 시각</span>
-                        <span>노선 및 차량</span>
-                        <span>운행 상태</span>
-                    </div>
-                    <div id="timetable-rows" class="divide-y divide-slate-100 text-sm">
-                        <!-- Dynamic schedule rows injected via JS -->
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-id" class="tab-content hidden p-4 space-y-4">
-                <div class="text-center space-y-1">
-                    <h2 class="font-bold text-slate-800 text-lg">모바일 학생증 & 승차 태그</h2>
-                    <p class="text-xs text-slate-500">달구지 승차 시 단말기에 태그하거나 QR 코드를 스캔하세요</p>
-                </div>
-
-                <!-- Digital Student ID Card -->
-                <div class="bg-gradient-to-br from-knu-700 via-knu-600 to-blue-900 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-                    <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-white/5 rounded-full blur-2xl"></div>
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <div class="text-[10px] text-blue-200 font-bold uppercase tracking-widest">KANGNAM UNIVERSITY</div>
-                            <div class="text-base font-extrabold tracking-tight">모바일 학생증</div>
-                        </div>
-                        <i data-lucide="contact" class="w-7 h-7 text-yellow-400"></i>
-                    </div>
-
-                    <div class="flex items-center space-x-4 mb-4">
-                        <div class="w-14 h-18 rounded-lg bg-slate-200 border-2 border-white/30 overflow-hidden flex items-center justify-center bg-slate-300">
-                            <i data-lucide="user" class="w-8 h-8 text-slate-500"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-blue-200">소프트웨어전공</div>
-                            <div class="text-lg font-bold">김강남</div>
-                            <div class="text-xs text-blue-200 tracking-wider">학번: 2024123456</div>
-                        </div>
-                    </div>
-
-                    <div class="pt-3 border-t border-white/10 flex justify-between items-center text-[11px] text-blue-200">
-                        <span>재학 상태: 승인됨</span>
-                        <span class="flex items-center gap-1"><i data-lucide="wifi" class="w-3 h-3 text-emerald-400"></i> BLE 비콘 자동 승차 활성</span>
-                    </div>
-                </div>
-
-                <!-- Dynamic QR & Tag Section -->
-                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center space-y-4">
-                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Dynamic QR 태그 생성됨
-                    </div>
-
-                    <!-- Dynamic Simulated QR Code -->
-                    <div class="relative w-44 h-44 mx-auto bg-slate-50 p-3 rounded-2xl border-2 border-slate-200 flex items-center justify-center overflow-hidden">
-                        <div class="w-full h-full bg-slate-900 rounded-lg p-2 grid grid-cols-6 gap-1 opacity-90">
-                            <div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div>
-                            <div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div>
-                            <div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div>
-                            <div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-slate-900"></div>
-                            <div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div>
-                            <div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-slate-900"></div><div class="bg-white rounded-sm"></div>
-                        </div>
-                        <div class="scan-line absolute left-0 right-0 h-1 bg-emerald-400 shadow-[0_0_8px_#34d399]"></div>
-                    </div>
-
-                    <div class="text-xs text-slate-500 font-medium">
-                        남은 유효시간: <span id="qr-timer" class="text-red-500 font-bold">02:59</span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2 pt-1">
-                        <button onclick="simulateTag('NFC / QR 승차')" class="py-3 bg-knu-600 hover:bg-knu-700 active:scale-[0.98] transition text-white font-bold rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5">
-                            <i data-lucide="qr-code" class="w-4 h-4"></i> 모의 QR/NFC 태그
-                        </button>
-                        <button onclick="simulateTag('BLE 비콘 자동 승차')" class="py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition text-white font-bold rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5">
-                            <i data-lucide="bluetooth" class="w-4 h-4"></i> BLE 감지 태그
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-ai" class="tab-content hidden p-4 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                        <i data-lucide="sparkles" class="w-5 h-5 text-amber-500"></i> AI 탑승 예측 알림센터
-                    </h2>
-                    <span class="text-[11px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">AI 실시간 계산</span>
-                </div>
-
-                <!-- AI Prediction Main Card -->
-                <div class="bg-gradient-to-r from-slate-900 via-knu-800 to-knu-900 rounded-2xl p-4 text-white shadow-lg space-y-3">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <span class="text-xs text-blue-300 font-medium" id="ai-route-info-tag">1노선 (기흥역 출발 기준)</span>
-                            <div class="text-lg font-bold mt-0.5">달구지 탑승 성공 확률</div>
-                        </div>
-                        <div class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-full text-sm font-extrabold" id="ai-probability-badge">
-                            85% (원활)
-                        </div>
-                    </div>
-
-                    <p class="text-xs text-slate-300 leading-relaxed" id="ai-recommendation-text">
-                        요일 및 교시별 빅데이터 분석 결과, <span class="text-yellow-400 font-semibold">1노선(기흥역)</span>은 현재 출발 시 좌석을 여유롭게 확보할 수 있습니다. <span class="text-yellow-400 font-semibold">교육관 정류장</span>으로 이동 시 승차 인원이 급증할 수 있습니다.
-                    </p>
-
-                    <div class="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                        <span class="text-slate-400">AI 권장 대기시간</span>
-                        <span class="font-bold text-amber-300">정류장 도착 5분 전 대기 권장</span>
-                    </div>
-                </div>
-
-                <!-- AI Smart Notification Cards -->
-                <div class="space-y-3">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">실시간 맞춤 알림 메세지</h3>
-
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex space-x-3 items-start">
-                        <div class="p-2 bg-blue-50 text-knu-600 rounded-xl mt-0.5 flex-shrink-0">
-                            <i data-lucide="cloud-rain" class="w-5 h-5"></i>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-slate-800 text-sm">날씨 연동 혼잡도 경보</span>
-                                <span class="text-[10px] text-slate-400">10분 전</span>
-                            </div>
-                            <p class="text-xs text-slate-600 mt-1">
-                                강수 확률이 높아져 지하철역(기흥역, 강남대역) 정류장의 탑승 대기줄이 평소보다 길어질 예정입니다.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex space-x-3 items-start">
-                        <div class="p-2 bg-amber-50 text-amber-600 rounded-xl mt-0.5 flex-shrink-0">
-                            <i data-lucide="clock" class="w-5 h-5"></i>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-slate-800 text-sm">배차 간격 자동 조절</span>
-                                <span class="text-[10px] text-slate-400">1시간 전</span>
-                            </div>
-                            <p class="text-xs text-slate-600 mt-1">
-                                2노선(강남대역 스타벅스 앞) 수송량 증가로 09:00 ~ 10:30 집중 운행 버스가 1대 추가 배치되었습니다.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-
-        <nav class="bg-white border-t border-slate-200 px-3 py-2 flex justify-around items-center absolute bottom-0 left-0 right-0 z-30">
-            <button onclick="switchTab('tab-home')" id="nav-tab-home" class="nav-btn flex flex-col items-center text-knu-600">
-                <i data-lucide="map-pin" class="w-5 h-5"></i>
-                <span class="text-[10px] font-bold mt-1">실시간 지도</span>
-            </button>
-
-            <button onclick="switchTab('tab-schedule')" id="nav-tab-schedule" class="nav-btn flex flex-col items-center text-slate-400 hover:text-slate-600">
-                <i data-lucide="calendar" class="w-5 h-5"></i>
-                <span class="text-[10px] font-medium mt-1">시간표/이력</span>
-            </button>
-
-            <button onclick="switchTab('tab-id')" id="nav-tab-id" class="nav-btn flex flex-col items-center text-slate-400 hover:text-slate-600">
-                <i data-lucide="qr-code" class="w-5 h-5"></i>
-                <span class="text-[10px] font-medium mt-1">학생증 태그</span>
-            </button>
-
-            <button onclick="switchTab('tab-ai')" id="nav-tab-ai" class="nav-btn flex flex-col items-center text-slate-400 hover:text-slate-600">
-                <i data-lucide="bot" class="w-5 h-5"></i>
-                <span class="text-[10px] font-medium mt-1">AI 알림</span>
-            </button>
-        </nav>
-
-        <!-- Boarding Simulation Toast Modal -->
-        <div id="toast" class="hidden absolute top-16 left-4 right-4 bg-emerald-600 text-white p-3.5 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transition-all duration-300">
-            <i data-lucide="check-circle-2" class="w-6 h-6 text-white flex-shrink-0"></i>
-            <div>
-                <div id="toast-title" class="font-bold text-sm">달구지 승차 처리 완료!</div>
-                <div id="toast-desc" class="text-xs text-emerald-100">학생증 인증 및 잔여석 차감이 즉시 반영됩니다.</div>
-            </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-shield-alt text-emerald-500 text-sm"></i>
+            <span>캡처 방지 및 보안 토큰이 적용되었습니다.</span>
+          </div>
         </div>
+
+      </div>
 
     </div>
 
-    <script>
-        // Data Structures for Routes requested by User
-        const routesData = {
-            1: {
-                id: 1,
-                name: "1노선 (기흥역 셔틀)",
-                badge: "1호",
-                title: "기흥역 → 강남대역 → 샬롬관 → 교육관 → 이공관",
-                currentStopIdx: 0,
-                seats: 12,
-                totalSeats: 45,
-                stops: [
-                    { name: "기흥역", time: "현재 위치", status: "current", desc: "출발 대기 중 (12석 남음)", eta: "출발" },
-                    { name: "강남대역", time: "3분 후 도착", status: "upcoming", desc: "예상 잔여 10석", eta: "3분" },
-                    { name: "샬롬관", time: "7분 후 도착", status: "upcoming", desc: "예상 잔여 8석", eta: "7분" },
-                    { name: "교육관", time: "10분 후 도착", status: "upcoming", desc: "예상 잔여 5석", eta: "10분" },
-                    { name: "이공관", time: "12분 후 도착", status: "upcoming", desc: "종점 노선", eta: "12분" }
-                ],
-                timelineHistory: [
-                    { stop: "강남대역 통과 완료", bus: "달구지 1호차 (승차 14명)", time: "09:30 통과" },
-                    { stop: "기흥역 출발 완료", bus: "달구지 1호차", time: "09:22 통과" },
-                    { stop: "이공관 종점 도착", bus: "달구지 2호차", time: "09:05 통과" }
-                ],
-                svgPoints: [
-                    { x: 50, y: 120, label: "기흥역" },
-                    { x: 130, y: 70, label: "강남대역" },
-                    { x: 210, y: 160, label: "샬롬관" },
-                    { x: 290, y: 100, label: "교육관" },
-                    { x: 350, y: 180, label: "이공관" }
-                ],
-                ai: {
-                    prob: "85% (원활)",
-                    routeTag: "1노선 (기흥역 출발 기준)",
-                    text: "빅데이터 분석 결과, <span class='text-yellow-400 font-semibold'>1노선(기흥역)</span>은 출발점에서 승차할 경우 좌석 착석 성공률이 매우 높습니다. <span class='text-yellow-400 font-semibold'>교육관/이공관</span> 도착 시 잔여 좌석이 5석 미만으로 줄어듭니다."
-                }
-            },
-            2: {
-                id: 2,
-                name: "2노선 (강남대역 스벅 순환)",
-                badge: "2호",
-                title: "강남대역(스타벅스 앞) → 샬롬관 → 교육관 → 이공관",
-                currentStopIdx: 1,
-                seats: 6,
-                totalSeats: 45,
-                stops: [
-                    { name: "강남대역(스타벅스 앞)", time: "09:35 통과 완료", status: "passed", desc: "지나감", eta: "지나감" },
-                    { name: "샬롬관", time: "현재 위치", status: "current", desc: "승차 진행 중 (잔여 6석)", eta: "도착" },
-                    { name: "교육관", time: "3분 후 도착", status: "upcoming", desc: "예상 잔여 3석 (혼잡)", eta: "3분" },
-                    { name: "이공관", time: "6분 후 도착", status: "upcoming", desc: "종점 노선", eta: "6분" }
-                ],
-                timelineHistory: [
-                    { stop: "강남대역(스타벅스 앞) 통과 완료", bus: "달구지 2호차 (승차 32명)", time: "09:35 통과" },
-                    { stop: "이공관 도착 완료", bus: "달구지 1호차", time: "09:18 통과" },
-                    { stop: "교육관 통과 완료", bus: "달구지 1호차", time: "09:12 통과" }
-                ],
-                svgPoints: [
-                    { x: 80, y: 80, label: "강남대역(스벅)" },
-                    { x: 180, y: 170, label: "샬롬관" },
-                    { x: 270, y: 110, label: "교육관" },
-                    { x: 350, y: 180, label: "이공관" }
-                ],
-                ai: {
-                    prob: "42% (혼잡)",
-                    routeTag: "2노선 (강남대역 스벅 기준)",
-                    text: "빅데이터 분석 결과, <span class='text-yellow-400 font-semibold'>2노선(강남대역 스타벅스 앞)</span>은 등교 학생 집중 정류장으로 입석 가능성이 높습니다. 여유 있는 이동을 위해 <span class='text-yellow-400 font-semibold'>1노선 기흥역</span> 탑승을 추천합니다."
-                }
-            }
-        };
+    <!-- Bottom Navigation Bar -->
+    <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-around items-center h-16 px-2 text-gray-400 select-none z-20">
+      <button class="nav-btn flex-1 flex flex-col items-center justify-center space-y-1 text-knu-blue dark:text-blue-400" data-tab="tab-home">
+        <i class="fas fa-bus text-lg"></i>
+        <span class="text-[10px] font-bold">실시간 위치</span>
+      </button>
+      <button class="nav-btn flex-1 flex flex-col items-center justify-center space-y-1 hover:text-knu-blue dark:hover:text-blue-400" data-tab="tab-timetable">
+        <i class="fas fa-clock text-lg"></i>
+        <span class="text-[10px] font-bold">시간표</span>
+      </button>
+      <button class="nav-btn flex-1 flex flex-col items-center justify-center space-y-1 hover:text-knu-blue dark:hover:text-blue-400" data-tab="tab-idcard">
+        <i class="fas fa-id-card text-lg"></i>
+        <span class="text-[10px] font-bold">학생증 태그</span>
+      </button>
+    </div>
 
-        let currentActiveRoute = 1;
+  </div>
 
-        // Initialize Lucide Icons
-        lucide.createIcons();
+  <script>
+    // Data Structure
+    const routesData = {
+      giheung: [
+        { name: "기흥역 4번 출구", code: "START", passed: true, time: "09:20 출발" },
+        { name: "강남대역", code: "STATION", passed: true, time: "09:23 통과", warning: "만석 시 무정차" },
+        { name: "이공관", code: "ENG", isBusHere: true, time: "현재 위치 (진입 중)" },
+        { name: "본관", code: "MAIN", passed: false, time: "도착 예정 (1분 후)" },
+        { name: "인문사회관", code: "HUMAN", passed: false, time: "도착 예정 (3분 후)" },
+        { name: "스타벅스 앞", code: "STB", passed: false, time: "회차 대기" }
+      ],
+      starbucks: [
+        { name: "스타벅스 앞", code: "STB", passed: true, time: "09:15 출발" },
+        { name: "샬롬관", code: "SHALOM", isBusHere: true, time: "현재 위치" },
+        { name: "본관", code: "MAIN", passed: false, time: "도착 예정 (2분 후)" },
+        { name: "이공관", code: "ENG", passed: false, time: "도착 예정 (4분 후)" }
+      ]
+    };
 
-        // Clock Script
-        function updateClock() {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('current-time').innerText = `${hours}:${minutes}`;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+    const scheduleData = {
+      monFri: [
+        { time: "08:00 ~ 09:00", note: "10회 집중 운행", status: "운행 완료" },
+        { time: "10:30", note: "이공관 출발 10:40", status: "운행 완료" },
+        { time: "10:50", note: "이공관 출발 11:00", status: "운행 완료" },
+        { time: "11:10", note: "이공관 출발 11:20", status: "운행 중 (현재)", isCurrent: true },
+        { time: "11:30", note: "이공관 출발 11:50", status: "예정" },
+        { time: "12:50", note: "이공관 출발 13:00", status: "예정" },
+        { time: "13:10", note: "이공관 출발 13:20", status: "예정" },
+        { time: "14:00", note: "이공관 출발 14:10", status: "예정" },
+        { time: "17:00", note: "이공관 출발 17:30", status: "막차 전" }
+      ],
+      tueThu: [
+        { time: "08:00 ~ 09:00", note: "19회 집중 운행 (증차)", status: "운행 완료" },
+        { time: "10:30", note: "이공관 출발 10:40", status: "운행 완료" },
+        { time: "10:50", note: "이공관 출발 11:00", status: "운행 완료" },
+        { time: "11:10 (2대)", note: "이공관 출발 11:20 (2대)", status: "운행 중 (현재)", isCurrent: true },
+        { time: "11:30 (2대)", note: "이공관 출발 11:50 (2대)", status: "예정" },
+        { time: "13:00 / 13:10", note: "연속 배차", status: "예정" },
+        { time: "13:40 / 13:50", note: "연속 배차", status: "예정" },
+        { time: "14:00 ~ 14:30", note: "10분 간격 운행", status: "예정" },
+        { time: "17:00 / 17:20", note: "막차 구간", status: "예정" }
+      ]
+    };
 
-        function selectRoute(routeId) {
-            currentActiveRoute = routeId;
-            const route = routesData[routeId];
+    // Render Timeline
+    function renderTimeline(routeKey) {
+      const container = document.getElementById('route-timeline');
+      container.innerHTML = '';
+      const stations = routesData[routeKey];
 
-            // Tab Buttons UI Update
-            const btn1 = document.getElementById('btn-route-1');
-            const btn2 = document.getElementById('btn-route-2');
-
-            if (routeId === 1) {
-                btn1.className = "flex-1 py-2.5 rounded-xl transition-all duration-200 bg-white text-knu-700 shadow-sm flex items-center justify-center gap-1 font-bold";
-                btn2.className = "flex-1 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1 font-medium";
-            } else {
-                btn2.className = "flex-1 py-2.5 rounded-xl transition-all duration-200 bg-white text-knu-700 shadow-sm flex items-center justify-center gap-1 font-bold";
-                btn1.className = "flex-1 py-2.5 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1 font-medium";
-            }
-
-            // Update Headers & Summary
-            document.getElementById('route-bus-badge').innerText = route.badge;
-            document.getElementById('route-title').innerText = route.title;
-            document.getElementById('live-seats-count').innerHTML = `${route.seats} <span class="text-xs font-normal text-slate-500">/ ${route.totalSeats}석</span>`;
-
-            const currentStop = route.stops[route.currentStopIdx];
-            const nextStop = route.stops[route.currentStopIdx + 1] || route.stops[route.currentStopIdx];
-
-            document.getElementById('current-stop-name').innerText = currentStop.name;
-            document.getElementById('next-stop-name').innerText = `${nextStop.name} (${nextStop.eta})`;
-
-            // Render Map SVG
-            renderRouteMap(route);
-
-            // Render Station List
-            renderStationList(route);
-
-            // Render Timeline History
-            renderTimelineHistory(route);
-
-            // Render Schedule
-            renderScheduleTable(route);
-
-            // Render AI Info
-            renderAiInfo(route);
-
-            lucide.createIcons();
+      stations.forEach((st) => {
+        const item = document.createElement('div');
+        item.className = 'relative flex items-center justify-between';
+        
+        let nodeIcon = `<div class="absolute -left-[23px] w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-gray-800"></div>`;
+        if (st.isBusHere) {
+          nodeIcon = `
+            <div class="absolute -left-[29px] w-7 h-7 rounded-full bg-knu-blue text-amber-300 flex items-center justify-center text-xs shadow-md animate-bounce">
+              <i class="fas fa-bus"></i>
+            </div>
+          `;
+        } else if (st.passed) {
+          nodeIcon = `<div class="absolute -left-[23px] w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-800"></div>`;
         }
 
-        function renderRouteMap(route) {
-            const svgMap = document.getElementById('route-svg-map');
-            const points = route.svgPoints;
-            
-            let pathD = `M ${points[0].x} ${points[0].y}`;
-            for (let i = 1; i < points.length; i++) {
-                pathD += ` L ${points[i].x} ${points[i].y}`;
-            }
+        item.innerHTML = `
+          ${nodeIcon}
+          <div>
+            <p class="font-bold text-xs ${st.isBusHere ? 'text-knu-blue dark:text-blue-300 text-sm' : 'text-gray-700 dark:text-gray-200'}">
+              ${st.name}
+              ${st.warning ? `<span class="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.2 rounded ml-1 font-normal">${st.warning}</span>` : ''}
+            </p>
+            <p class="text-[10px] text-gray-400">${st.time}</p>
+          </div>
+          ${st.isBusHere ? `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">실시간 접근</span>` : ''}
+        `;
+        container.appendChild(item);
+      });
+    }
 
-            let svgContent = `
-                <!-- Background Line -->
-                <path d="${pathD}" stroke="#cbd5e1" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-                <!-- KNU Blue Active Line -->
-                <path d="${pathD}" stroke="#1b4998" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-            `;
+    // Render Timetable
+    function renderTimetable(type) {
+      const container = document.getElementById('timetable-list');
+      container.innerHTML = '';
+      const list = scheduleData[type];
 
-            // Draw Station Points
-            points.forEach((p, idx) => {
-                const isCurrent = idx === route.currentStopIdx;
-                const fill = isCurrent ? "#1b4998" : "#ffffff";
-                const stroke = "#1b4998";
+      list.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = `p-3 flex justify-between items-center ${item.isCurrent ? 'bg-blue-50/80 dark:bg-gray-700/80 font-bold' : ''}`;
+        row.innerHTML = `
+          <div>
+            <p class="text-xs ${item.isCurrent ? 'text-knu-blue dark:text-blue-300 font-bold' : 'text-gray-800 dark:text-gray-200'}">${item.time}</p>
+            <p class="text-[10px] text-gray-400">${item.note}</p>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full ${
+            item.isCurrent 
+              ? 'bg-knu-blue text-white' 
+              : item.status.includes('완료') 
+                ? 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300' 
+                : 'bg-emerald-100 text-emerald-700'
+          }">${item.status}</span>
+        `;
+        container.appendChild(row);
+      });
+    }
 
-                svgContent += `
-                    <circle cx="${p.x}" cy="${p.y}" r="${isCurrent ? '8' : '6'}" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
-                    <text x="${p.x}" y="${p.y + 22}" fill="#334155" font-size="10" font-weight="bold" text-anchor="middle">${p.label}</text>
-                `;
-            });
+    // Navigation Tab Controller
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.getAttribute('data-tab');
+        
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.getElementById(targetTab).classList.remove('hidden');
 
-            svgMap.innerHTML = svgContent;
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          b.classList.remove('text-knu-blue', 'dark:text-blue-400');
+          b.classList.add('text-gray-400');
+        });
+        btn.classList.add('text-knu-blue', 'dark:text-blue-400');
+        btn.classList.remove('text-gray-400');
+      });
+    });
 
-            // Position Live Bus Pin to current stop
-            const curPt = points[route.currentStopIdx];
-            const busPin = document.getElementById('live-bus-pin');
-            busPin.style.left = `${(curPt.x / 400) * 100}%`;
-            busPin.style.top = `${(curPt.y / 250) * 100}%`;
-            document.getElementById('bus-label-pin').innerText = `달구지 ${route.badge}차`;
-        }
+    // Timetable Sub-tab Toggle
+    const btnMonFri = document.getElementById('btn-mon-fri');
+    const btnTueThu = document.getElementById('btn-tue-thu');
 
-        function renderStationList(route) {
-            const container = document.getElementById('station-list-container');
-            let html = '';
+    btnMonFri.addEventListener('click', () => {
+      btnMonFri.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 shadow-sm transition";
+      btnTueThu.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition";
+      renderTimetable('monFri');
+    });
 
-            route.stops.forEach((stop) => {
-                if (stop.status === 'passed') {
-                    html += `
-                        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-3 h-3 rounded-full bg-slate-300"></div>
-                                <div>
-                                    <div class="font-bold text-slate-800 text-sm">${stop.name}</div>
-                                    <div class="text-xs text-slate-400">${stop.time}</div>
-                                </div>
-                            </div>
-                            <span class="text-xs text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">지나감</span>
-                        </div>
-                    `;
-                } else if (stop.status === 'current') {
-                    html += `
-                        <div class="bg-white p-3.5 rounded-2xl border-2 border-knu-500 shadow-sm flex items-center justify-between relative overflow-hidden">
-                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-knu-500"></div>
-                            <div class="flex items-center space-x-3 pl-1">
-                                <div class="w-3 h-3 rounded-full bg-knu-500 animate-ping"></div>
-                                <div>
-                                    <div class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-                                        ${stop.name}
-                                        <span class="text-[10px] bg-knu-50 text-knu-600 px-1.5 py-0.5 rounded font-semibold">현재 위치</span>
-                                    </div>
-                                    <div class="text-xs text-knu-600 font-medium">${stop.desc}</div>
-                                </div>
-                            </div>
-                            <span class="text-xs font-bold text-knu-600 bg-blue-50 px-3 py-1.5 rounded-xl">도착</span>
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-3 h-3 rounded-full bg-amber-400"></div>
-                                <div>
-                                    <div class="font-bold text-slate-800 text-sm">${stop.name}</div>
-                                    <div class="text-xs text-slate-500">${stop.desc}</div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xs font-bold text-emerald-600">${stop.time}</div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
+    btnTueThu.addEventListener('click', () => {
+      btnTueThu.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 shadow-sm transition";
+      btnMonFri.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition";
+      renderTimetable('tueThu');
+    });
 
-            container.innerHTML = html;
-        }
+    // Route Select Change
+    document.getElementById('route-select').addEventListener('change', (e) => {
+      renderTimeline(e.target.value);
+    });
 
-        function renderTimelineHistory(route) {
-            const container = document.getElementById('passed-timeline-container');
-            let html = '';
+    // Dark Mode Toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      const icon = document.getElementById('theme-icon');
+      if(document.documentElement.classList.contains('dark')) {
+        icon.className = 'fas fa-sun';
+      } else {
+        icon.className = 'fas fa-moon';
+      }
+    });
 
-            route.timelineHistory.forEach((item, idx) => {
-                const color = idx === 0 ? 'bg-blue-500' : 'bg-slate-300';
-                html += `
-                    <div class="relative">
-                        <span class="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full ${color} border-2 border-white"></span>
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="text-sm font-bold text-slate-800">${item.stop}</div>
-                                <div class="text-xs text-slate-500">${item.bus}</div>
-                            </div>
-                            <span class="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">${item.time}</span>
-                        </div>
-                    </div>
-                `;
-            });
+    // Dynamic QR Code Timer
+    let timeLeft = 30;
+    setInterval(() => {
+      timeLeft = timeLeft > 0 ? timeLeft - 1 : 30;
+      document.getElementById('qr-timer').innerText = `00:${timeLeft < 10 ? '0' : ''}${timeLeft}`;
+    }, 1000);
 
-            container.innerHTML = html;
-        }
+    document.getElementById('refresh-qr').addEventListener('click', () => {
+      timeLeft = 30;
+      document.getElementById('qr-timer').innerText = `00:30`;
+    });
 
-        function renderScheduleTable(route) {
-            document.getElementById('schedule-route-tag').innerText = route.name;
-            const rowsContainer = document.getElementById('timetable-rows');
+    // Realtime Clock Update
+    setInterval(() => {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('current-time').innerText = `${hours}:${minutes}`;
+    }, 1000);
 
-            rowsContainer.innerHTML = `
-                <div class="p-3.5 flex justify-between items-center bg-slate-50 opacity-60">
-                    <span class="font-bold text-slate-600">09:10</span>
-                    <span class="text-xs text-slate-500">${route.badge}차 운행</span>
-                    <span class="text-xs text-slate-400 bg-slate-200 px-2 py-0.5 rounded">운행완료</span>
-                </div>
-                <div class="p-3.5 flex justify-between items-center bg-blue-50/60">
-                    <span class="font-bold text-knu-600">09:30</span>
-                    <span class="text-xs font-medium text-slate-700">${route.badge}차 운행</span>
-                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">운행 중</span>
-                </div>
-                <div class="p-3.5 flex justify-between items-center">
-                    <span class="font-bold text-slate-800">09:50</span>
-                    <span class="text-xs text-slate-600">${route.badge}차 운행</span>
-                    <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">예정</span>
-                </div>
-                <div class="p-3.5 flex justify-between items-center">
-                    <span class="font-bold text-slate-800">10:10</span>
-                    <span class="text-xs text-slate-600">${route.badge}차 운행</span>
-                    <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">대기</span>
-                </div>
-            `;
-        }
+    // Initial Load
+    renderTimeline('giheung');
+    renderTimetable('monFri');
+  </script>
 
-        function renderAiInfo(route) {
-            document.getElementById('ai-route-info-tag').innerText = route.ai.routeTag;
-            document.getElementById('ai-probability-badge').innerText = route.ai.prob;
-            document.getElementById('ai-recommendation-text').innerHTML = route.ai.text;
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(tabId).classList.remove('hidden');
-
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.className = 'nav-btn flex flex-col items-center text-slate-400 hover:text-slate-600';
-                const textSpan = btn.querySelector('span');
-                if (textSpan) textSpan.className = 'text-[10px] font-medium mt-1';
-            });
-
-            const activeNav = document.getElementById(`nav-${tabId}`);
-            if (activeNav) {
-                activeNav.className = 'nav-btn flex flex-col items-center text-knu-600';
-                const textSpan = activeNav.querySelector('span');
-                if (textSpan) textSpan.className = 'text-[10px] font-bold mt-1';
-            }
-        }
-
-        // QR Timer Countdown
-        let secondsLeft = 179;
-        const timerEl = document.getElementById('qr-timer');
-        setInterval(() => {
-            if (secondsLeft <= 0) secondsLeft = 180;
-            secondsLeft--;
-            const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-            const s = String(secondsLeft % 60).padStart(2, '0');
-            if (timerEl) timerEl.innerText = `${m}:${s}`;
-        }, 1000);
-
-        // Tag Simulation Toast Function
-        function simulateTag(methodName) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-title').innerText = `${methodName} 성공!`;
-            document.getElementById('toast-desc').innerText = `학번(2024123456) 승차 승인 및 달구지 ${currentActiveRoute}노선 잔여석 업데이트`;
-            
-            toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
-        }
-
-        // Initialize First Render
-        window.onload = function() {
-            selectRoute(1);
-        };
-    </script>
 </body>
 </html>
