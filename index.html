@@ -30,10 +30,11 @@
     }
     .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     @keyframes scan-line {
-      0% { top: 0%; }
-      100% { top: 100%; }
+      0% { top: 5%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 90%; opacity: 0.8; }
     }
-    .scan-line { animation: scan-line 2s linear infinite; }
+    .scan-line { animation: scan-line 2s ease-in-out infinite alternate; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
@@ -66,9 +67,10 @@
         <button id="theme-toggle" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-xs text-blue-100 transition">
           <i class="fas fa-moon" id="theme-icon"></i>
         </button>
-        <button class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-xs text-blue-100 relative">
+        <!-- Notification Center Bell Button -->
+        <button id="notification-btn" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-xs text-blue-100 relative transition">
           <i class="fas fa-bell"></i>
-          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          <span id="notif-badge" class="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full animate-ping"></span>
         </button>
       </div>
     </div>
@@ -77,8 +79,8 @@
     <div class="bg-blue-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-blue-100 dark:border-gray-600 flex items-center justify-between text-xs">
       <span class="text-gray-500 dark:text-gray-300 font-medium">노선 선택</span>
       <select id="route-select" class="bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 font-bold border border-blue-200 dark:border-gray-600 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-knu-blue">
-        <option value="giheung">기흥역 4번출구 ↔ 캠퍼스</option>
-        <option value="starbucks">스타벅스 앞 ↔ 캠퍼스</option>
+        <option value="giheung">기흥역 4번출구 순환 노선</option>
+        <option value="starbucks">스타벅스 앞 순환 노선</option>
       </select>
     </div>
 
@@ -91,7 +93,7 @@
         <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3 flex items-start space-x-2.5 text-xs text-amber-800 dark:text-amber-300">
           <i class="fas fa-exclamation-triangle text-amber-500 text-sm mt-0.5 shrink-0"></i>
           <div>
-            <span class="font-bold">기흥역 노선 주의사항:</span>
+            <span class="font-bold">기흥역 노선 안내:</span>
             <span>만석 시 강남대역 무정차 통과될 수 있습니다.</span>
           </div>
         </div>
@@ -103,7 +105,7 @@
           </div>
           <div class="flex justify-between items-start mb-2">
             <span class="bg-white/20 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-sm">실시간 운행 중</span>
-            <span class="text-xs text-blue-100 font-mono" id="live-eta-clock">다음 출발 09:30</span>
+            <span class="text-xs text-blue-100 font-mono" id="live-eta-clock">다음 출발 11:30</span>
           </div>
           <div class="flex items-baseline space-x-2 mb-3">
             <span class="text-2xl font-extrabold" id="bus-target-station">기흥역 4번출구</span>
@@ -118,7 +120,7 @@
               <div class="bg-amber-400 h-2 rounded-full transition-all duration-500" style="width: 31%;"></div>
             </div>
             <div class="flex justify-between items-center text-[11px] text-blue-200 pt-1">
-              <span><i class="fas fa-map-marker-alt text-amber-400 mr-1"></i>현재 위치: 강남대역 이동 중</span>
+              <span><i class="fas fa-map-marker-alt text-amber-400 mr-1"></i>현재 위치: 샬롬관 접근 중</span>
               <span class="text-emerald-300 font-semibold"><i class="fas fa-wifi text-[9px] mr-1"></i>GPS 수신 정상</span>
             </div>
           </div>
@@ -139,19 +141,6 @@
           </div>
         </div>
 
-        <!-- AI Forecast Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-knu-blue dark:text-blue-400 flex items-center">
-              <i class="fas fa-robot mr-1.5"></i>AI 탑승 예상 리포트
-            </span>
-            <span class="text-[10px] bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full">실시간 예측</span>
-          </div>
-          <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-            현재 화요일 1교시 수업 시간대 영향으로 <span class="font-bold text-knu-blue dark:text-blue-300">기흥역 출발 버스 혼잡도</span>가 높습니다. 강남대역 이용을 권장합니다.
-          </p>
-        </div>
-
       </div>
 
       <!-- TAB 2: Timetable & Pass History -->
@@ -167,16 +156,16 @@
         <div class="bg-blue-50 dark:bg-gray-800/80 p-3 rounded-xl border border-blue-100 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 flex justify-between items-center">
           <div>
             <i class="far fa-calendar-alt text-knu-blue dark:text-blue-400 mr-1.5"></i>
-            <span>2026-2학기 운행기간: 09.01 ~ 12.16</span>
+            <span>2026-2학기 운행시간표</span>
           </div>
-          <span class="text-[10px] text-gray-400">주말/공휴일 미운행</span>
+          <span class="text-[10px] text-amber-600 font-bold">🔔 클릭 시 5분 전 알림</span>
         </div>
 
         <!-- Main Timetable Card -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 flex justify-between text-xs font-bold text-gray-500 dark:text-gray-300">
             <span>출발 정류장 / 시간</span>
-            <span>운행 상태 / 이력</span>
+            <span>알림 및 상태</span>
           </div>
           <div class="divide-y divide-gray-100 dark:divide-gray-700 text-xs" id="timetable-list">
             <!-- Rendered via JS -->
@@ -185,12 +174,12 @@
 
       </div>
 
-      <!-- TAB 3: Student ID Pass (Refined Premium Look) -->
+      <!-- TAB 3: Student ID Pass (Modified) -->
       <div id="tab-idcard" class="tab-content p-4 space-y-4 hidden">
         
         <!-- Premium Mobile Student Card Component -->
         <div class="bg-gradient-to-br from-knu-blue via-[#002d57] to-[#001f3f] text-white rounded-2xl p-5 shadow-xl relative overflow-hidden border border-white/10">
-          <div class="flex justify-between items-start mb-6">
+          <div class="flex justify-between items-start mb-5">
             <div class="flex items-center space-x-2">
               <div class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                 <i class="fas fa-university text-knu-gold text-xs"></i>
@@ -202,30 +191,65 @@
             </span>
           </div>
 
-          <div class="flex items-center space-x-4 mb-6">
-            <div class="w-14 h-18 bg-gray-300 rounded-lg overflow-hidden border-2 border-white/20 shadow-inner flex-shrink-0">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" alt="학생 사진" class="w-full h-full object-cover">
+          <div class="flex items-center space-x-4 mb-5">
+            <!-- Default Avatar Photo Profile -->
+            <div class="w-16 h-16 bg-blue-900/60 rounded-full border-2 border-white/30 flex items-center justify-center text-blue-200 shadow-inner flex-shrink-0">
+              <i class="fas fa-user text-3xl"></i>
             </div>
-            <div class="space-y-1">
-              <p class="text-xs text-blue-200">소프트웨어전공</p>
-              <h2 class="text-lg font-bold">구도경 <span class="text-xs font-normal text-blue-200">(재학생)</span></h2>
+            <div class="space-y-0.5">
+              <p class="text-xs text-blue-200 font-medium">전자반도체공학부</p>
+              <h2 class="text-xl font-bold tracking-wide">강냉이 <span class="text-xs font-normal text-blue-200">(재학생)</span></h2>
               <p class="text-xs font-mono text-knu-gold">2026123456</p>
             </div>
           </div>
 
-          <!-- Dynamic Security QR Code Box -->
-          <div class="bg-white rounded-xl p-4 text-center shadow-inner relative overflow-hidden">
-            <div class="scan-line absolute left-0 right-0 h-0.5 bg-blue-500 shadow-md"></div>
-            <div class="flex justify-center mb-2">
-              <!-- Animated QR Pattern Placeholder -->
-              <div class="w-32 h-32 bg-gray-900 rounded-lg p-2 flex items-center justify-center relative">
-                <i class="fas fa-qrcode text-white text-7xl"></i>
+          <!-- Dynamic Security QR & Barcode Box (Realistic Style) -->
+          <div class="bg-white rounded-xl p-4 text-center shadow-2xl relative overflow-hidden text-gray-800">
+            <div class="scan-line absolute left-2 right-2 h-0.5 bg-blue-500 shadow-lg z-10"></div>
+            
+            <div class="flex flex-col items-center justify-center my-1 space-y-2">
+              <!-- Real Looking QR Pattern -->
+              <div class="w-36 h-36 border-4 border-gray-900 p-1 bg-white relative flex items-center justify-center shadow-md">
+                <!-- Inner Decorative QR elements -->
+                <div class="w-full h-full border border-gray-800 p-1 flex flex-col justify-between">
+                  <div class="flex justify-between">
+                    <div class="w-7 h-7 bg-gray-900 flex items-center justify-center">
+                      <div class="w-3 h-3 bg-white flex items-center justify-center">
+                        <div class="w-1.5 h-1.5 bg-gray-900"></div>
+                      </div>
+                    </div>
+                    <div class="w-7 h-7 bg-gray-900 flex items-center justify-center">
+                      <div class="w-3 h-3 bg-white flex items-center justify-center">
+                        <div class="w-1.5 h-1.5 bg-gray-900"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Center Dynamic Icon -->
+                  <div class="self-center my-auto">
+                    <i class="fas fa-bus text-knu-blue text-xl"></i>
+                  </div>
+                  <div class="flex justify-between">
+                    <div class="w-7 h-7 bg-gray-900 flex items-center justify-center">
+                      <div class="w-3 h-3 bg-white flex items-center justify-center">
+                        <div class="w-1.5 h-1.5 bg-gray-900"></div>
+                      </div>
+                    </div>
+                    <div class="w-3 h-3 bg-gray-900 self-end"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Real Barcode simulation -->
+              <div class="w-full pt-1 flex flex-col items-center">
+                <div class="h-8 w-48 bg-gray-900 flex justify-between px-1 items-center" style="background: repeating-linear-gradient(90deg, #000, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 7px, #fff 7px, #fff 8px);"></div>
+                <span class="text-[10px] font-mono text-gray-500 tracking-widest mt-0.5">KNU-2026-9921-8812</span>
               </div>
             </div>
-            <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono px-2">
+
+            <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono px-1 pt-2 border-t border-gray-100">
               <span>남은 시간: <strong class="text-red-500" id="qr-timer">00:28</strong></span>
               <button class="text-knu-blue font-bold hover:underline" id="refresh-qr">
-                <i class="fas fa-sync-alt mr-1"></i>갱신
+                <i class="fas fa-sync-alt mr-1"></i>보안 QR 갱신
               </button>
             </div>
           </div>
@@ -233,23 +257,54 @@
           <!-- Seamless Tag Indicator -->
           <div class="mt-4 bg-white/5 rounded-xl p-3 border border-white/10 flex items-center justify-between text-xs text-blue-100">
             <div class="flex items-center space-x-2">
-              <i class="fas fa-podcast text-amber-400 text-sm animate-pulse"></i>
-              <span>단말기 근처 태그 가능</span>
+              <i class="fas fa-wifi text-amber-400 text-sm animate-pulse"></i>
+              <span>단말기에 태그하면 승차 처리됩니다</span>
             </div>
-            <span class="text-[10px] text-blue-300 font-mono">NFC / BLE AUTO</span>
+            <span class="text-[10px] text-blue-300 font-mono">NFC / BLE</span>
           </div>
 
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <i class="fas fa-shield-alt text-emerald-500 text-sm"></i>
-            <span>캡처 방지 및 보안 토큰이 적용되었습니다.</span>
-          </div>
         </div>
 
       </div>
 
+    </div>
+
+    <!-- Notification Modal Drawer -->
+    <div id="notif-modal" class="fixed inset-0 bg-black/50 z-50 flex justify-center items-end sm:items-center hidden">
+      <div class="bg-white dark:bg-gray-800 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-2xl max-h-[80vh] flex flex-col">
+        <div class="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
+          <h3 class="font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center">
+            <i class="fas fa-bell text-knu-blue dark:text-blue-400 mr-2"></i>알림 센터
+          </h3>
+          <button id="close-notif-btn" class="text-gray-400 hover:text-gray-600 p-1">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto space-y-2.5 text-xs no-scrollbar" id="notif-list">
+          <div class="p-3 bg-blue-50 dark:bg-gray-700/60 rounded-xl border border-blue-100 dark:border-gray-600 space-y-1">
+            <div class="flex justify-between font-bold text-knu-blue dark:text-blue-300">
+              <span>[5분 전 알림] 11:30 출발 버스</span>
+              <span class="text-[10px] text-gray-400 font-normal">방금 전</span>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300">기흥역 4번 출구에서 달구지가 5분 후(11:30)에 출발합니다. 정류장으로 이동해 주세요!</p>
+          </div>
+
+          <div class="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-xl space-y-1">
+            <div class="flex justify-between font-bold text-gray-700 dark:text-gray-300">
+              <span>[AI 혼잡도 안내] 화요일 1교시</span>
+              <span class="text-[10px] text-gray-400 font-normal">09:00</span>
+            </div>
+            <p class="text-gray-500 dark:text-gray-400">현재 기흥역 승차 대기 인원이 많습니다. 강남대역 이용 시 빠른 승차가 가능합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Popup -->
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-gray-900/90 text-white text-xs px-4 py-2.5 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center space-x-2">
+      <i class="fas fa-check-circle text-emerald-400"></i>
+      <span id="toast-msg">알림이 설정되었습니다.</span>
     </div>
 
     <!-- Bottom Navigation Bar -->
@@ -271,46 +326,52 @@
   </div>
 
   <script>
-    // Data Structure
+    // Updated Route Data with Exact Station Sequences requested
     const routesData = {
       giheung: [
-        { name: "기흥역 4번 출구", code: "START", passed: true, time: "09:20 출발" },
-        { name: "강남대역", code: "STATION", passed: true, time: "09:23 통과", warning: "만석 시 무정차" },
-        { name: "이공관", code: "ENG", isBusHere: true, time: "현재 위치 (진입 중)" },
-        { name: "본관", code: "MAIN", passed: false, time: "도착 예정 (1분 후)" },
-        { name: "인문사회관", code: "HUMAN", passed: false, time: "도착 예정 (3분 후)" },
-        { name: "스타벅스 앞", code: "STB", passed: false, time: "회차 대기" }
+        { name: "기흥역 4번출구", code: "START", passed: true, time: "11:30 출발 예정" },
+        { name: "강남대역", code: "STATION", passed: false, time: "만석 시 무정차 통과", warning: "만석 주의" },
+        { name: "샬롬관", code: "SHALOM", isBusHere: true, time: "현재 위치 (진입 중)" },
+        { name: "교육관", code: "EDU1", passed: false, time: "도착 예정 (2분 후)" },
+        { name: "이공관", code: "ENG", passed: false, time: "도착 예정 (4분 후)" },
+        { name: "교육관", code: "EDU2", passed: false, time: "도착 예정 (6분 후)" },
+        { name: "인문사회관", code: "HUMAN", passed: false, time: "도착 예정 (8분 후)" },
+        { name: "강남대역(스타벅스 앞)", code: "STB", passed: false, time: "도착 예정 (10분 후)" },
+        { name: "기흥역 4번출구", code: "END", passed: false, time: "회차 종점" }
       ],
       starbucks: [
-        { name: "스타벅스 앞", code: "STB", passed: true, time: "09:15 출발" },
+        { name: "강남대역(스타벅스 앞)", code: "STB_START", passed: true, time: "11:20 출발 완료" },
         { name: "샬롬관", code: "SHALOM", isBusHere: true, time: "현재 위치" },
-        { name: "본관", code: "MAIN", passed: false, time: "도착 예정 (2분 후)" },
-        { name: "이공관", code: "ENG", passed: false, time: "도착 예정 (4분 후)" }
+        { name: "교육관", code: "EDU1", passed: false, time: "도착 예정 (2분 후)" },
+        { name: "이공관", code: "ENG", passed: false, time: "도착 예정 (4분 후)" },
+        { name: "교육관", code: "EDU2", passed: false, time: "도착 예정 (6분 후)" },
+        { name: "인문사회관", code: "HUMAN", passed: false, time: "도착 예정 (8분 후)" },
+        { name: "강남대역(스타벅스 앞)", code: "STB_END", passed: false, time: "회차 종점" }
       ]
     };
 
     const scheduleData = {
       monFri: [
-        { time: "08:00 ~ 09:00", note: "10회 집중 운행", status: "운행 완료" },
-        { time: "10:30", note: "이공관 출발 10:40", status: "운행 완료" },
-        { time: "10:50", note: "이공관 출발 11:00", status: "운행 완료" },
-        { time: "11:10", note: "이공관 출발 11:20", status: "운행 중 (현재)", isCurrent: true },
-        { time: "11:30", note: "이공관 출발 11:50", status: "예정" },
-        { time: "12:50", note: "이공관 출발 13:00", status: "예정" },
-        { time: "13:10", note: "이공관 출발 13:20", status: "예정" },
-        { time: "14:00", note: "이공관 출발 14:10", status: "예정" },
-        { time: "17:00", note: "이공관 출발 17:30", status: "막차 전" }
+        { time: "08:00 ~ 09:00", note: "10회 집중 운행", status: "운행 완료", alertSet: false },
+        { time: "10:30", note: "이공관 출발 10:40", status: "운행 완료", alertSet: false },
+        { time: "10:50", note: "이공관 출발 11:00", status: "운행 완료", alertSet: false },
+        { time: "11:10", note: "이공관 출발 11:20", status: "운행 중", isCurrent: true, alertSet: false },
+        { time: "11:30", note: "이공관 출발 11:50", status: "예정", alertSet: true },
+        { time: "12:50", note: "이공관 출발 13:00", status: "예정", alertSet: false },
+        { time: "13:10", note: "이공관 출발 13:20", status: "예정", alertSet: false },
+        { time: "14:00", note: "이공관 출발 14:10", status: "예정", alertSet: false },
+        { time: "17:00", note: "이공관 출발 17:30", status: "막차 전", alertSet: false }
       ],
       tueThu: [
-        { time: "08:00 ~ 09:00", note: "19회 집중 운행 (증차)", status: "운행 완료" },
-        { time: "10:30", note: "이공관 출발 10:40", status: "운행 완료" },
-        { time: "10:50", note: "이공관 출발 11:00", status: "운행 완료" },
-        { time: "11:10 (2대)", note: "이공관 출발 11:20 (2대)", status: "운행 중 (현재)", isCurrent: true },
-        { time: "11:30 (2대)", note: "이공관 출발 11:50 (2대)", status: "예정" },
-        { time: "13:00 / 13:10", note: "연속 배차", status: "예정" },
-        { time: "13:40 / 13:50", note: "연속 배차", status: "예정" },
-        { time: "14:00 ~ 14:30", note: "10분 간격 운행", status: "예정" },
-        { time: "17:00 / 17:20", note: "막차 구간", status: "예정" }
+        { time: "08:00 ~ 09:00", note: "19회 집중 운행 (증차)", status: "운행 완료", alertSet: false },
+        { time: "10:30", note: "이공관 출발 10:40", status: "운행 완료", alertSet: false },
+        { time: "10:50", note: "이공관 출발 11:00", status: "운행 완료", alertSet: false },
+        { time: "11:10 (2대)", note: "이공관 출발 11:20 (2대)", status: "운행 중", isCurrent: true, alertSet: false },
+        { time: "11:30 (2대)", note: "이공관 출발 11:50 (2대)", status: "예정", alertSet: true },
+        { time: "13:00 / 13:10", note: "연속 배차", status: "예정", alertSet: false },
+        { time: "13:40 / 13:50", note: "연속 배차", status: "예정", alertSet: false },
+        { time: "14:00 ~ 14:30", note: "10분 간격 운행", status: "예정", alertSet: false },
+        { time: "17:00 / 17:20", note: "막차 구간", status: "예정", alertSet: false }
       ]
     };
 
@@ -356,25 +417,87 @@
       container.innerHTML = '';
       const list = scheduleData[type];
 
-      list.forEach((item) => {
+      list.forEach((item, index) => {
         const row = document.createElement('div');
         row.className = `p-3 flex justify-between items-center ${item.isCurrent ? 'bg-blue-50/80 dark:bg-gray-700/80 font-bold' : ''}`;
+        
+        const bellColor = item.alertSet ? 'text-amber-500' : 'text-gray-300 hover:text-amber-500';
+        
         row.innerHTML = `
           <div>
             <p class="text-xs ${item.isCurrent ? 'text-knu-blue dark:text-blue-300 font-bold' : 'text-gray-800 dark:text-gray-200'}">${item.time}</p>
             <p class="text-[10px] text-gray-400">${item.note}</p>
           </div>
-          <span class="text-[10px] px-2 py-0.5 rounded-full ${
-            item.isCurrent 
-              ? 'bg-knu-blue text-white' 
-              : item.status.includes('완료') 
-                ? 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300' 
-                : 'bg-emerald-100 text-emerald-700'
-          }">${item.status}</span>
+          <div class="flex items-center space-x-3">
+            <button class="toggle-alert-btn text-sm ${bellColor} transition p-1" data-type="${type}" data-index="${index}">
+              <i class="${item.alertSet ? 'fas' : 'far'} fa-bell"></i>
+            </button>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${
+              item.isCurrent 
+                ? 'bg-knu-blue text-white' 
+                : item.status.includes('완료') 
+                  ? 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300' 
+                  : 'bg-emerald-100 text-emerald-700'
+            }">${item.status}</span>
+          </div>
         `;
         container.appendChild(row);
       });
+
+      // Bind Alert Toggle Events
+      document.querySelectorAll('.toggle-alert-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const t = e.currentTarget.getAttribute('data-type');
+          const idx = e.currentTarget.getAttribute('data-index');
+          const targetItem = scheduleData[t][idx];
+          
+          targetItem.alertSet = !targetItem.alertSet;
+          renderTimetable(t);
+
+          if (targetItem.alertSet) {
+            showToast(`[${targetItem.time}] 출발 5분 전 알림이 등록되었습니다!`);
+            addNotificationItem(`[알림 예약] ${targetItem.time} 출발 버스 5분 전 알림이 설정되었습니다.`);
+          } else {
+            showToast(`알림이 해제되었습니다.`);
+          }
+        });
+      });
     }
+
+    // Toast Function
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+
+    // Add Item to Notif Center
+    function addNotificationItem(text) {
+      const list = document.getElementById('notif-list');
+      const item = document.createElement('div');
+      item.className = 'p-3 bg-blue-50 dark:bg-gray-700/60 rounded-xl border border-blue-100 dark:border-gray-600 space-y-1';
+      item.innerHTML = `
+        <div class="flex justify-between font-bold text-knu-blue dark:text-blue-300">
+          <span>신규 예약 알림</span>
+          <span class="text-[10px] text-gray-400 font-normal">방금 전</span>
+        </div>
+        <p class="text-gray-600 dark:text-gray-300">${text}</p>
+      `;
+      list.prepend(item);
+    }
+
+    // Modal Control
+    document.getElementById('notification-btn').addEventListener('click', () => {
+      document.getElementById('notif-modal').classList.remove('hidden');
+      document.getElementById('notif-badge').classList.add('hidden');
+    });
+
+    document.getElementById('close-notif-btn').addEventListener('click', () => {
+      document.getElementById('notif-modal').classList.add('hidden');
+    });
 
     // Navigation Tab Controller
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -435,6 +558,7 @@
     document.getElementById('refresh-qr').addEventListener('click', () => {
       timeLeft = 30;
       document.getElementById('qr-timer').innerText = `00:30`;
+      showToast('보안 QR 코드가 새롭게 갱신되었습니다.');
     });
 
     // Realtime Clock Update
