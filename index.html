@@ -152,9 +152,9 @@
         <div class="bg-blue-50 dark:bg-gray-800/80 p-3 rounded-xl border border-blue-100 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 flex justify-between items-center">
           <div>
             <i class="far fa-calendar-alt text-knu-blue dark:text-blue-400 mr-1.5"></i>
-            <span id="timetable-title-label">2026-2학기 운행시간표</span>
+            <span id="timetable-title-label">운행시간표</span>
           </div>
-          <span class="text-[10px] text-amber-600 font-bold">🔔 클릭 시 5분 전 알림</span>
+          <span class="text-[10px] text-amber-600 font-bold">🔔 클릭 시 앱 푸시 알림 예약</span>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -239,7 +239,7 @@
       <div class="bg-white dark:bg-gray-800 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-2xl max-h-[80vh] flex flex-col">
         <div class="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
           <h3 class="font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center">
-            <i class="fas fa-bell text-knu-blue dark:text-blue-400 mr-2"></i>알림 센터
+            <i class="fas fa-bell text-knu-blue dark:text-blue-400 mr-2"></i>예약된 푸시 알림
           </h3>
           <button id="close-notif-btn" class="text-gray-400 hover:text-gray-600 p-1">
             <i class="fas fa-times"></i>
@@ -277,7 +277,6 @@
   </div>
 
   <script>
-    // 노선 데이터
     const routesData = {
       giheung: [
         { name: "기흥역 4번출구", code: "START" },
@@ -301,7 +300,6 @@
       ]
     };
 
-    // 이미지 원본 시간표 데이터 (시:분 형식 배열)
     const rawSchedules = {
       giheung: {
         monFri: [
@@ -365,28 +363,49 @@
 
     let activeRoute = 'giheung';
     let activeDay = 'monFri';
-    let alerts = {};
+    let alerts = {}; // 타이머 ID를 함께 저장할 객체
 
-    // 오늘 요일 자동 감지 설정 (0: 일, 1: 월, 2: 화, 3: 수, 4: 목, 5: 금, 6: 토)
+    // 브라우저 웹 푸시 알림 권한 요청 함수
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              showToast("앱 푸시 알림 권한이 허용되었습니다!");
+            }
+          });
+        }
+      }
+    }
+
+    // 실제 핸드폰/PC 상단 푸시 알림을 발송하는 함수
+    function sendPushNotification(title, body) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+          body: body,
+          icon: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+          vibrate: [200, 100, 200]
+        });
+      }
+    }
+
     function autoDetectDay() {
       const day = new Date().getDay();
-      if (day === 2 || day === 3 || day === 4) { // 화, 수, 목
+      if (day === 2 || day === 3 || day === 4) {
         activeDay = 'tueThu';
         document.getElementById('btn-tue-thu').click();
-      } else { // 월, 금 또는 주말
+      } else {
         activeDay = 'monFri';
         document.getElementById('btn-mon-fri').click();
       }
     }
 
-    // 시간 문자열(HH:MM)을 분 단위를 의미하는 숫자로 변환
     function timeToMinutes(timeStr) {
       if(!timeStr) return 0;
       const [h, m] = timeStr.split(':').map(Number);
       return h * 60 + m;
     }
 
-    // 실시간 상태 계산 및 UI 업데이트
     function updateRealtimeStatus() {
       const now = new Date();
       const currentMin = now.getHours() * 60 + now.getMinutes();
@@ -419,7 +438,6 @@
       }
 
       if (!nextBus) {
-        // 오늘 모든 운행 종료
         document.getElementById('live-status-tag').innerText = '운행 종료';
         document.getElementById('live-status-tag').className = 'bg-gray-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
         document.getElementById('next-bus-time-text').innerText = '금일 운행 종료';
@@ -430,23 +448,20 @@
         const diff = nextBus.startMin - currentMin;
 
         if (diff > 0) {
-          // 다음 출발 대기 중
           document.getElementById('live-status-tag').innerText = '운행 대기 중';
           document.getElementById('live-status-tag').className = 'bg-blue-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
           document.getElementById('next-bus-time-text').innerText = `${nextBus.start} 출발`;
           document.getElementById('countdown-text').innerText = `${diff}분 후 출발`;
           const progress = Math.max(10, 100 - (diff * 5));
           document.getElementById('progress-bar').style.width = `${Math.min(100, progress)}%`;
-          renderTimeline(activeRoute, 0); // 출발지 위치
+          renderTimeline(activeRoute, 0);
         } else {
-          // 현재 운행 중
           document.getElementById('live-status-tag').innerText = '실시간 운행 중';
           document.getElementById('live-status-tag').className = 'bg-emerald-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full animate-pulse';
           document.getElementById('next-bus-time-text').innerText = `${nextBus.start} 버스`;
           document.getElementById('countdown-text').innerText = '운행 중';
           document.getElementById('progress-bar').style.width = '60%';
           
-          // 진행 시간에 따른 위치 시뮬레이션
           const elapsed = currentMin - nextBus.startMin;
           const totalStations = routesData[activeRoute].length;
           const currentStationIdx = Math.min(totalStations - 1, Math.floor(elapsed / 2) + 1);
@@ -455,7 +470,6 @@
       }
     }
 
-    // 타임라인 그리기
     function renderTimeline(routeKey, busPositionIndex) {
       const container = document.getElementById('route-timeline');
       container.innerHTML = '';
@@ -493,7 +507,6 @@
       });
     }
 
-    // 시간표 목록 렌더링
     function renderTimetable() {
       const container = document.getElementById('timetable-list');
       container.innerHTML = '';
@@ -547,25 +560,53 @@
         container.appendChild(row);
       });
 
-      // 알림 버튼 바인딩
+      // 알림 버튼 클릭 핸들러 (실제 웹 푸시 예약 구현)
       document.querySelectorAll('.toggle-alert-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          requestNotificationPermission(); // 권한 요청
+
           const key = e.currentTarget.getAttribute('data-key');
-          const time = e.currentTarget.getAttribute('data-time');
+          const timeStr = e.currentTarget.getAttribute('data-time');
           
           if (alerts[key]) {
+            // 이미 설정된 알림 취소
+            clearTimeout(alerts[key].timerId);
             delete alerts[key];
-            showToast(`알림이 해제되었습니다.`);
+            showToast(`[${timeStr}] 알림 예약이 취소되었습니다.`);
           } else {
-            alerts[key] = true;
-            showToast(`[${time}] 출발 5분 전 알림 설정 완료!`);
+            // 알림 시간 계산 (출발 5분 전)
+            const now = new Date();
+            const targetTime = new Date();
+            const [h, m] = timeStr.split(':').map(Number);
+            targetTime.setHours(h, m - 5, 0, 0); // 출발 5분 전 설정
+
+            let delay = targetTime.getTime() - now.getTime();
+
+            if (delay < 0) {
+              // 이미 시간이 지난 경우 테스트용으로 3초 뒤 발송하도록 설정
+              showToast(`지나간 시각입니다. (테스트용 3초 후 알림 발송)`);
+              delay = 3000;
+            } else {
+              showToast(`[${timeStr}] 버스 출발 5분 전 푸시 알림 설정 완료!`);
+            }
+
+            // 푸시 알림 타이머 예약
+            const timerId = setTimeout(() => {
+              sendPushNotification(
+                "🚌 강남대 셔틀버스 출발 5분 전!",
+                `잠시 후 ${timeStr}에 ${activeRoute === 'giheung' ? '기흥역 4번출구' : '스타벅스 앞'}에서 셔틀버스가 출발합니다.`
+              );
+              delete alerts[key];
+              renderTimetable();
+            }, delay);
+
+            alerts[key] = { timerId, timeStr };
           }
           renderTimetable();
         });
       });
     }
 
-    // 토스트 및 알림 함수
     function showToast(msg) {
       const toast = document.getElementById('toast');
       document.getElementById('toast-msg').innerText = msg;
@@ -575,7 +616,6 @@
       }, 2500);
     }
 
-    // 이벤트 리스너
     document.getElementById('route-select').addEventListener('change', (e) => {
       activeRoute = e.target.value;
       updateRealtimeStatus();
@@ -599,7 +639,6 @@
       renderTimetable();
     });
 
-    // 탭 이동
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const targetTab = btn.getAttribute('data-tab');
@@ -615,12 +654,10 @@
       });
     });
 
-    // 야간 모드
     document.getElementById('theme-toggle').addEventListener('click', () => {
       document.documentElement.classList.toggle('dark');
     });
 
-    // 알림 모달
     document.getElementById('notification-btn').addEventListener('click', () => {
       document.getElementById('notif-modal').classList.remove('hidden');
     });
@@ -628,7 +665,6 @@
       document.getElementById('notif-modal').classList.add('hidden');
     });
 
-    // 실시간 시계 및 셔틀 상태 주기적 업데이트 (1초마다)
     setInterval(() => {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
@@ -638,7 +674,6 @@
       updateRealtimeStatus();
     }, 1000);
 
-    // 초기화
     autoDetectDay();
     updateRealtimeStatus();
     renderTimetable();
