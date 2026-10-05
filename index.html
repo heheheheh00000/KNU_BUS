@@ -3,697 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KNU_BUS</title>
+  <title>셔틀버스 시간표</title>
 
-  <!-- 1. 기본 웹 파비콘 지정 -->
+  <!-- 홈 화면 아이콘 설정 -->
   <link rel="icon" type="image/png" href="icon.png">
-
-  <!-- 2. 아이폰 Safari 홈 화면 추가 전용 아이콘 설정 -->
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
-
-  <!-- 3. 아이폰 모바일 웹 앱 설정 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="KNU_BUS">
-</head>
+  <meta name="apple-mobile-web-app-title" content="버스시간표">
 
-  <title>강남대학교 달구지 스마트 셔틀</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            knu: {
-              blue: '#003A70',
-              lightBlue: '#005bac',
-              gold: '#C5A059',
-              bg: '#F4F6F9'
-            }
-          }
-        }
-      }
-    }
-  </script>
   <style>
-    @keyframes pulse-subtle {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.85; transform: scale(0.98); }
-    }
-    .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    @keyframes scan-line {
-      0% { top: 5%; opacity: 0.8; }
-      50% { opacity: 1; }
-      100% { top: 90%; opacity: 0.8; }
-    }
-    .scan-line { animation: scan-line 2s ease-in-out infinite alternate; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f6f8; padding: 20px 15px; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    
+    h1 { font-size: 20px; text-align: center; margin-bottom: 20px; color: #1a1a1a; }
+    
+    .select-group { margin-bottom: 20px; }
+    label { font-size: 14px; font-weight: bold; color: #666; display: block; margin-bottom: 8px; }
+    select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; background: #fff; outline: none; }
+    
+    .status-card { background: #eef5ff; border: 1px solid #cce0ff; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px; }
+    .status-card .station-name { font-size: 14px; color: #0056b3; font-weight: bold; margin-bottom: 4px; }
+    .status-card .time-left { font-size: 24px; font-weight: bold; color: #007bff; margin: 6px 0; }
+    .status-card .next-bus-info { font-size: 13px; color: #666; }
+
+    .schedule-list { list-style: none; }
+    .schedule-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 10px; border-bottom: 1px solid #f0f0f0; font-size: 15px; }
+    .schedule-item:last-child { border-bottom: none; }
+    .schedule-item.passed { color: #aaa; text-decoration: line-through; }
+    .schedule-item.next { font-weight: bold; color: #007bff; background: #f0f7ff; border-radius: 8px; padding-left: 12px; padding-right: 12px; }
+
+    footer { font-size: 11px; color: #aaa; text-align: center; margin-top: 25px; }
+    footer a { color: #aaa; text-decoration: none; }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans min-h-screen flex justify-center items-center p-0 sm:p-4 transition-colors duration-200">
+<body>
 
-  <div class="w-full sm:max-w-md h-screen sm:h-[844px] bg-white dark:bg-gray-800 sm:rounded-[36px] shadow-2xl overflow-hidden flex flex-col relative border-0 sm:border-8 border-gray-800 dark:border-gray-700">
+<div class="container">
+  <h1>🚌 셔틀버스 정류장별 시간표</h1>
 
-    <!-- Status Bar -->
-    <div class="bg-knu-blue text-white px-6 pt-3 pb-2 flex justify-between items-center text-xs select-none">
-      <span id="current-time">00:00</span>
-      <div class="flex items-center space-x-2">
-        <i class="fas fa-wifi"></i>
-        <i class="fas fa-battery-full"></i>
-      </div>
-    </div>
-
-    <!-- Header -->
-    <div class="bg-knu-blue text-white px-5 pb-4 pt-1 shadow-md flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-          <i class="fas fa-bus text-knu-gold text-base"></i>
-        </div>
-        <div>
-          <h1 class="font-bold text-lg leading-tight tracking-tight">강남대 달구지</h1>
-          <p class="text-[10px] text-blue-200 font-light">KANGNAM SHUTTLE BUS</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <button id="theme-toggle" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-xs text-blue-100 transition">
-          <i class="fas fa-moon" id="theme-icon"></i>
-        </button>
-        <button id="notification-btn" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-xs text-blue-100 relative transition">
-          <i class="fas fa-bell"></i>
-          <span id="notif-badge" class="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full animate-ping hidden"></span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Route Selector -->
-    <div class="bg-blue-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-blue-100 dark:border-gray-600 flex items-center justify-between text-xs">
-      <span class="text-gray-500 dark:text-gray-300 font-medium">노선 선택</span>
-      <select id="route-select" class="bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 font-bold border border-blue-200 dark:border-gray-600 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-knu-blue">
-        <option value="giheung">기흥역 4번출구 순환 노선</option>
-        <option value="starbucks">스타벅스 앞 순환 노선</option>
-      </select>
-    </div>
-
-    <!-- Main Content Area -->
-    <div class="flex-1 overflow-y-auto no-scrollbar pb-16 bg-knu-bg dark:bg-gray-900">
-
-      <!-- TAB 1: Live Map & Status -->
-      <div id="tab-home" class="tab-content p-4 space-y-4">
-        
-        <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3 flex items-start space-x-2.5 text-xs text-amber-800 dark:text-amber-300">
-          <i class="fas fa-exclamation-triangle text-amber-500 text-sm mt-0.5 shrink-0"></i>
-          <div>
-            <span class="font-bold">기흥역 노선 안내:</span>
-            <span>만석 시 강남대역 무정차 통과될 수 있습니다.</span>
-          </div>
-        </div>
-
-        <!-- Next Bus Realtime Banner -->
-        <div class="bg-gradient-to-r from-knu-blue to-knu-lightBlue text-white rounded-2xl p-4 shadow-lg relative overflow-hidden">
-          <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl text-white pointer-events-none">
-            <i class="fas fa-bus"></i>
-          </div>
-          <div class="flex justify-between items-start mb-2">
-            <span id="live-status-tag" class="bg-emerald-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-sm">실시간 운행 정보</span>
-            <span class="text-xs text-blue-100 font-mono" id="live-eta-clock">다음 출발 준비 중</span>
-          </div>
-          <div class="flex items-baseline space-x-2 mb-3">
-            <span class="text-2xl font-extrabold" id="bus-target-station">기흥역 4번출구</span>
-            <span class="text-sm font-medium text-blue-200" id="next-bus-time-text">--:-- 출발</span>
-          </div>
-          <div class="bg-white/10 rounded-xl p-3 backdrop-blur-md border border-white/10 space-y-2">
-            <div class="flex justify-between text-xs">
-              <span>남은 시간</span>
-              <span class="font-bold text-amber-300" id="countdown-text">계산 중...</span>
-            </div>
-            <div class="w-full bg-black/20 rounded-full h-2 overflow-hidden">
-              <div id="progress-bar" class="bg-amber-400 h-2 rounded-full transition-all duration-500" style="width: 50%;"></div>
-            </div>
-            <div class="flex justify-between items-center text-[11px] text-blue-200 pt-1">
-              <span id="current-bus-status"><i class="fas fa-clock mr-1"></i>현재 시각 기반 실시간 연동</span>
-              <span class="text-emerald-300 font-semibold"><i class="fas fa-wifi text-[9px] mr-1"></i>정상 연동</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Route Visualization Map Component -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 space-y-3">
-          <div class="flex justify-between items-center">
-            <h3 class="font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center">
-              <i class="fas fa-route text-knu-blue dark:text-blue-400 mr-2"></i>실시간 정류장 노선도
-            </h3>
-            <span class="text-[11px] text-gray-400">자동 업데이트</span>
-          </div>
-
-          <div class="relative pl-6 space-y-5 my-2 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-1 before:bg-blue-100 dark:before:bg-gray-700" id="route-timeline">
-          </div>
-        </div>
-
-      </div>
-
-      <!-- TAB 2: Timetable -->
-      <div id="tab-timetable" class="tab-content p-4 space-y-4 hidden">
-        
-        <!-- Day Toggle -->
-        <div class="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-xl text-xs font-bold">
-          <button id="btn-mon-fri" class="flex-1 py-2 rounded-lg bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 shadow-sm transition">월 · 금요일</button>
-          <button id="btn-tue-thu" class="flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition">화 · 수 · 목요일 (증차)</button>
-        </div>
-
-        <div class="bg-blue-50 dark:bg-gray-800/80 p-3 rounded-xl border border-blue-100 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 flex justify-between items-center">
-          <div>
-            <i class="far fa-calendar-alt text-knu-blue dark:text-blue-400 mr-1.5"></i>
-            <span id="timetable-title-label">운행시간표</span>
-          </div>
-          <span class="text-[10px] text-amber-600 font-bold">🔔 클릭 시 앱 푸시 알림 예약</span>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 flex justify-between text-xs font-bold text-gray-500 dark:text-gray-300">
-            <span>출발지 / 출발 시간 ➔ 이공관</span>
-            <span>알림 및 상태</span>
-          </div>
-          <div class="divide-y divide-gray-100 dark:divide-gray-700 text-xs" id="timetable-list">
-          </div>
-        </div>
-
-      </div>
-
-      <!-- TAB 3: Mobile ID -->
-      <div id="tab-idcard" class="tab-content p-4 space-y-4 hidden">
-        <div class="bg-gradient-to-br from-knu-blue via-[#002d57] to-[#001f3f] text-white rounded-2xl p-5 shadow-xl relative overflow-hidden border border-white/10">
-          <div class="flex justify-between items-start mb-5">
-            <div class="flex items-center space-x-2">
-              <div class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
-                <i class="fas fa-university text-knu-gold text-xs"></i>
-              </div>
-              <span class="font-bold text-sm tracking-wide">강남대학교 모바일 학생증</span>
-            </div>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 flex items-center">
-              <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1 animate-ping"></span>인증 활성화
-            </span>
-          </div>
-
-          <div class="flex items-center space-x-4 mb-5">
-            <div class="w-16 h-16 bg-blue-900/60 rounded-full border-2 border-white/30 flex items-center justify-center text-blue-200 shadow-inner flex-shrink-0">
-              <i class="fas fa-user text-3xl"></i>
-            </div>
-            <div class="space-y-0.5">
-              <p class="text-xs text-blue-200 font-medium">재학생</p>
-              <h2 class="text-xl font-bold tracking-wide">강냉이</h2>
-              <p class="text-xs font-mono text-knu-gold">2026123456</p>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-xl p-4 text-center shadow-2xl relative overflow-hidden text-gray-800">
-            <div class="scan-line absolute left-2 right-2 h-0.5 bg-blue-500 shadow-lg z-10"></div>
-            <div class="flex flex-col items-center justify-center my-1 space-y-2">
-              <div class="w-36 h-36 border-4 border-gray-900 p-1 bg-white relative flex items-center justify-center shadow-md">
-                <div class="w-full h-full border border-gray-800 p-1 flex flex-col justify-between">
-                  <div class="flex justify-between">
-                    <div class="w-7 h-7 bg-gray-900 flex items-center justify-center">
-                      <div class="w-3 h-3 bg-white flex items-center justify-center"><div class="w-1.5 h-1.5 bg-gray-900"></div></div>
-                    </div>
-                    <div class="w-7 h-7 bg-gray-900 flex items-center justify-center">
-                      <div class="w-3 h-3 bg-white flex items-center justify-center"><div class="w-1.5 h-1.5 bg-gray-900"></div></div>
-                    </div>
-                  </div>
-                  <div class="self-center my-auto"><i class="fas fa-bus text-knu-blue text-xl"></i></div>
-                  <div class="flex justify-between">
-                    <div class="w-7 h-7 bg-gray-900 flex items-center justify-center">
-                      <div class="w-3 h-3 bg-white flex items-center justify-center"><div class="w-1.5 h-1.5 bg-gray-900"></div></div>
-                    </div>
-                    <div class="w-3 h-3 bg-gray-900 self-end"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="w-full pt-1 flex flex-col items-center">
-                <div class="h-8 w-48 bg-gray-900 flex justify-between px-1 items-center" style="background: repeating-linear-gradient(90deg, #000, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 7px, #fff 7px, #fff 8px);"></div>
-                <span class="text-[10px] font-mono text-gray-500 tracking-widest mt-0.5">KNU-2026-9921-8812</span>
-              </div>
-            </div>
-
-            <div class="flex justify-between items-center text-[11px] text-gray-500 font-mono px-1 pt-2 border-t border-gray-100">
-              <span>남은 시간: <strong class="text-red-500" id="qr-timer">00:30</strong></span>
-              <button class="text-knu-blue font-bold hover:underline" id="refresh-qr">
-                <i class="fas fa-sync-alt mr-1"></i>QR 갱신
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Notification Modal Drawer -->
-    <div id="notif-modal" class="fixed inset-0 bg-black/50 z-50 flex justify-center items-end sm:items-center hidden">
-      <div class="bg-white dark:bg-gray-800 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-2xl max-h-[80vh] flex flex-col">
-        <div class="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3">
-          <h3 class="font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center">
-            <i class="fas fa-bell text-knu-blue dark:text-blue-400 mr-2"></i>예약된 푸시 알림
-          </h3>
-          <button id="close-notif-btn" class="text-gray-400 hover:text-gray-600 p-1">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto space-y-2.5 text-xs no-scrollbar" id="notif-list">
-          <p class="text-gray-400 text-center py-4">등록된 알림이 없습니다.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Toast Notification Popup -->
-    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 bg-gray-900/90 text-white text-xs px-4 py-2.5 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center space-x-2">
-      <i class="fas fa-check-circle text-emerald-400"></i>
-      <span id="toast-msg">알림이 설정되었습니다.</span>
-    </div>
-
-    <!-- Bottom Navigation Bar -->
-    <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-around items-center h-16 px-2 text-gray-400 select-none z-20">
-      <button class="nav-btn flex-1 flex flex-col items-center justify-center space-y-1 text-knu-blue dark:text-blue-400" data-tab="tab-home">
-        <i class="fas fa-bus text-lg"></i>
-        <span class="text-[10px] font-bold">실시간 위치</span>
-      </button>
-      <button class="nav-btn flex-1 flex flex-col items-center justify-center space-y-1 hover:text-knu-blue dark:hover:text-blue-400" data-tab="tab-timetable">
-        <i class="fas fa-clock text-lg"></i>
-        <span class="text-[10px] font-bold">시간표</span>
-      </button>
-      <button class="nav-btn flex-1 flex flex-col items-center justify-center space-y-1 hover:text-knu-blue dark:hover:text-blue-400" data-tab="tab-idcard">
-        <i class="fas fa-id-card text-lg"></i>
-        <span class="text-[10px] font-bold">학생증 태그</span>
-      </button>
-    </div>
-
+  <!-- 정류장 선택 드롭다운 -->
+  <div class="select-group">
+    <label for="stationSelect">📍 정류장 선택</label>
+    <select id="stationSelect" onchange="updateSchedule()">
+      <!-- JS에서 자동 생성 -->
+    </select>
   </div>
 
-  <script>
-    const routesData = {
-      giheung: [
-        { name: "기흥역 4번출구", code: "START" },
-        { name: "강남대역", code: "STATION", warning: "만석 시 무정차" },
-        { name: "샬롬관", code: "SHALOM" },
-        { name: "교육관", code: "EDU1" },
-        { name: "이공관", code: "ENG" },
-        { name: "교육관", code: "EDU2" },
-        { name: "인문사회관", code: "HUMAN" },
-        { name: "강남대역(스타벅스 앞)", code: "STB" },
-        { name: "기흥역 4번출구", code: "END" }
-      ],
-      starbucks: [
-        { name: "강남대역(스타벅스 앞)", code: "STB_START" },
-        { name: "샬롬관", code: "SHALOM" },
-        { name: "교육관", code: "EDU1" },
-        { name: "이공관", code: "ENG" },
-        { name: "교육관", code: "EDU2" },
-        { name: "인문사회관", code: "HUMAN" },
-        { name: "강남대역(스타벅스 앞)", code: "STB_END" }
-      ]
-    };
+  <!-- 실시간 가장 가까운 버스 상태 카드 -->
+  <div class="status-card">
+    <div id="currentStationTitle" class="station-name">기흥역4번출구 기준</div>
+    <div id="timeLeftText" class="time-left">계산 중...</div>
+    <div id="nextBusTimeText" class="next-bus-info">다음 버스 시각: --:--</div>
+  </div>
 
-    const rawSchedules = {
-      giheung: {
-        monFri: [
-          { start: "08:00", end: "09:00", egong: "08:10~09:10", note: "10회 운행" },
-          { start: "10:30", egong: "10:40", note: "일반 운행" },
-          { start: "10:50", egong: "11:00", note: "일반 운행" },
-          { start: "11:00", egong: "11:10", note: "일반 운행" },
-          { start: "11:10", egong: "11:20", note: "일반 운행" },
-          { start: "11:20", egong: "11:30", note: "일반 운행" },
-          { start: "11:30", egong: "11:50", note: "일반 운행" },
-          { start: "12:50", egong: "13:00", note: "일반 운행" },
-          { start: "13:10", egong: "13:20", note: "일반 운행" },
-          { start: "13:40", egong: "14:00", note: "일반 운행" },
-          { start: "14:00", egong: "14:10", note: "일반 운행" },
-          { start: "14:10", egong: "14:20", note: "일반 운행" },
-          { start: "14:20", egong: "14:30", note: "일반 운행" },
-          { start: "17:00", egong: "17:30", note: "일반 운행" },
-          { start: "17:20", egong: "17:50", note: "막차" }
-        ],
-        tueThu: [
-          { start: "08:00", end: "09:00", egong: "08:10~09:10", note: "19회 운행" },
-          { start: "10:30", egong: "10:40", note: "일반 운행" },
-          { start: "10:40", egong: "10:50", note: "일반 운행" },
-          { start: "10:50", egong: "11:00", note: "일반 운행" },
-          { start: "11:00", egong: "11:10", note: "일반 운행" },
-          { start: "11:10", egong: "11:20", note: "2대 운행" },
-          { start: "11:20", egong: "11:30", note: "일반 운행" },
-          { start: "11:30", egong: "11:50", note: "2대 운행" },
-          { start: "12:50", egong: "13:00", note: "일반 운행" },
-          { start: "13:10", egong: "13:20", note: "일반 운행" },
-          { start: "13:30", egong: "13:40", note: "일반 운행" },
-          { start: "13:40", egong: "13:50", note: "일반 운행" },
-          { start: "13:50", egong: "14:00", note: "일반 운행" },
-          { start: "14:00", egong: "14:10", note: "일반 운행" },
-          { start: "14:10", egong: "14:20", note: "일반 운행" },
-          { start: "14:20", egong: "14:30", note: "일반 운행" },
-          { start: "14:30", egong: "14:40", note: "일반 운행" },
-          { start: "15:00", egong: "15:30", note: "일반 운행" },
-          { start: "16:00", egong: "16:30", note: "일반 운행" },
-          { start: "17:00", egong: "17:30", note: "일반 운행" },
-          { start: "17:20", egong: "17:50", note: "막차" }
-        ]
-      },
-      starbucks: {
-        monFri: [
-          { start: "08:20", egong: "08:30", note: "일반 운행" },
-          { start: "08:30", egong: "08:40", note: "일반 운행" },
-          { start: "08:40", egong: "08:50", note: "일반 운행" },
-          { start: "08:50", egong: "09:00", note: "오전 막차" }
-        ],
-        tueThu: [
-          { start: "08:00", egong: "08:10", note: "일반 운행" },
-          { start: "08:10", egong: "08:20", note: "일반 운행" },
-          { start: "08:20", egong: "08:30", note: "일반 운행" },
-          { start: "08:30", egong: "08:40", note: "일반 운행" },
-          { start: "08:40", egong: "08:50", note: "일반 운행" },
-          { start: "08:50", egong: "09:00", note: "오전 막차" }
-        ]
-      }
-    };
+  <!-- 전체 버스 운행 시간표 -->
+  <h3 style="font-size: 15px; margin-bottom: 10px; color: #444;">전체 운행 예정 시간</h3>
+  <ul id="scheduleList" class="schedule-list"></ul>
+</div>
 
-    let activeRoute = 'giheung';
-    let activeDay = 'monFri';
-    let alerts = {}; // 타이머 ID를 함께 저장할 객체
-
-    // 브라우저 웹 푸시 알림 권한 요청 함수
-    function requestNotificationPermission() {
-      if ('Notification' in window) {
-        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-          Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-              showToast("앱 푸시 알림 권한이 허용되었습니다!");
-            }
-          });
-        }
-      }
-    }
-
-    // 실제 핸드폰/PC 상단 푸시 알림을 발송하는 함수
-    function sendPushNotification(title, body) {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, {
-          body: body,
-          icon: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
-          vibrate: [200, 100, 200]
-        });
-      }
-    }
-
-    function autoDetectDay() {
-      const day = new Date().getDay();
-      if (day === 2 || day === 3 || day === 4) {
-        activeDay = 'tueThu';
-        document.getElementById('btn-tue-thu').click();
-      } else {
-        activeDay = 'monFri';
-        document.getElementById('btn-mon-fri').click();
-      }
-    }
-
-    function timeToMinutes(timeStr) {
-      if(!timeStr) return 0;
-      const [h, m] = timeStr.split(':').map(Number);
-      return h * 60 + m;
-    }
-
-    function updateRealtimeStatus() {
-      const now = new Date();
-      const currentMin = now.getHours() * 60 + now.getMinutes();
-      const isWeekend = (now.getDay() === 0 || now.getDay() === 6);
-
-      const targetStationName = activeRoute === 'giheung' ? '기흥역 4번출구' : '스타벅스 앞';
-      document.getElementById('bus-target-station').innerText = targetStationName;
-
-      if (isWeekend) {
-        document.getElementById('live-status-tag').innerText = '주말 미운행';
-        document.getElementById('live-status-tag').className = 'bg-gray-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
-        document.getElementById('next-bus-time-text').innerText = '운행 없음';
-        document.getElementById('countdown-text').innerText = '주말 미운행';
-        document.getElementById('progress-bar').style.width = '0%';
-        renderTimeline(activeRoute, -1);
-        return;
-      }
-
-      const currentSchedule = rawSchedules[activeRoute][activeDay];
-      let nextBus = null;
-
-      for (let item of currentSchedule) {
-        const startMin = timeToMinutes(item.start);
-        const endMin = item.end ? timeToMinutes(item.end) : startMin + 20;
-
-        if (currentMin <= endMin) {
-          nextBus = { ...item, startMin, endMin };
-          break;
-        }
-      }
-
-      if (!nextBus) {
-        document.getElementById('live-status-tag').innerText = '운행 종료';
-        document.getElementById('live-status-tag').className = 'bg-gray-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
-        document.getElementById('next-bus-time-text').innerText = '금일 운행 종료';
-        document.getElementById('countdown-text').innerText = '운행 종료';
-        document.getElementById('progress-bar').style.width = '100%';
-        renderTimeline(activeRoute, -1);
-      } else {
-        const diff = nextBus.startMin - currentMin;
-
-        if (diff > 0) {
-          document.getElementById('live-status-tag').innerText = '운행 대기 중';
-          document.getElementById('live-status-tag').className = 'bg-blue-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
-          document.getElementById('next-bus-time-text').innerText = `${nextBus.start} 출발`;
-          document.getElementById('countdown-text').innerText = `${diff}분 후 출발`;
-          const progress = Math.max(10, 100 - (diff * 5));
-          document.getElementById('progress-bar').style.width = `${Math.min(100, progress)}%`;
-          renderTimeline(activeRoute, 0);
-        } else {
-          document.getElementById('live-status-tag').innerText = '실시간 운행 중';
-          document.getElementById('live-status-tag').className = 'bg-emerald-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full animate-pulse';
-          document.getElementById('next-bus-time-text').innerText = `${nextBus.start} 버스`;
-          document.getElementById('countdown-text').innerText = '운행 중';
-          document.getElementById('progress-bar').style.width = '60%';
-          
-          const elapsed = currentMin - nextBus.startMin;
-          const totalStations = routesData[activeRoute].length;
-          const currentStationIdx = Math.min(totalStations - 1, Math.floor(elapsed / 2) + 1);
-          renderTimeline(activeRoute, currentStationIdx);
-        }
-      }
-    }
-
-    function renderTimeline(routeKey, busPositionIndex) {
-      const container = document.getElementById('route-timeline');
-      container.innerHTML = '';
-      const stations = routesData[routeKey];
-
-      stations.forEach((st, idx) => {
-        const item = document.createElement('div');
-        item.className = 'relative flex items-center justify-between';
-        
-        const isBusHere = (idx === busPositionIndex);
-        const passed = (busPositionIndex >= 0 && idx < busPositionIndex);
-
-        let nodeIcon = `<div class="absolute -left-[23px] w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-gray-800"></div>`;
-        if (isBusHere) {
-          nodeIcon = `
-            <div class="absolute -left-[29px] w-7 h-7 rounded-full bg-knu-blue text-amber-300 flex items-center justify-center text-xs shadow-md animate-bounce">
-              <i class="fas fa-bus"></i>
-            </div>
-          `;
-        } else if (passed) {
-          nodeIcon = `<div class="absolute -left-[23px] w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-800"></div>`;
-        }
-
-        item.innerHTML = `
-          ${nodeIcon}
-          <div>
-            <p class="font-bold text-xs ${isBusHere ? 'text-knu-blue dark:text-blue-300 text-sm' : 'text-gray-700 dark:text-gray-200'}">
-              ${st.name}
-              ${st.warning ? `<span class="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.2 rounded ml-1 font-normal">${st.warning}</span>` : ''}
-            </p>
-          </div>
-          ${isBusHere ? `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">실시간 위치</span>` : ''}
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    function renderTimetable() {
-      const container = document.getElementById('timetable-list');
-      container.innerHTML = '';
-      
-      const routeNameLabel = activeRoute === 'giheung' ? '기흥역(4번 출구)' : '스타벅스 앞';
-      document.getElementById('timetable-title-label').innerText = `[${routeNameLabel}] 운행시간표`;
-
-      const now = new Date();
-      const currentMin = now.getHours() * 60 + now.getMinutes();
-      const list = rawSchedules[activeRoute][activeDay];
-
-      list.forEach((item, index) => {
-        const row = document.createElement('div');
-        const startMin = timeToMinutes(item.start);
-        const endMin = item.end ? timeToMinutes(item.end) : startMin + 15;
-
-        let statusText = "예정";
-        let statusBg = "bg-emerald-100 text-emerald-700";
-        let isCurrent = false;
-
-        if (currentMin > endMin) {
-          statusText = "운행 완료";
-          statusBg = "bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300";
-        } else if (currentMin >= startMin && currentMin <= endMin) {
-          statusText = "운행 중";
-          statusBg = "bg-knu-blue text-white";
-          isCurrent = true;
-        }
-
-        const alertKey = `${activeRoute}_${activeDay}_${index}`;
-        const isAlertSet = !!alerts[alertKey];
-        const bellColor = isAlertSet ? 'text-amber-500' : 'text-gray-300 hover:text-amber-500';
-
-        row.className = `p-3 flex justify-between items-center ${isCurrent ? 'bg-blue-50/80 dark:bg-gray-700/80 font-bold' : ''}`;
-        
-        row.innerHTML = `
-          <div>
-            <p class="text-xs ${isCurrent ? 'text-knu-blue dark:text-blue-300 font-bold' : 'text-gray-800 dark:text-gray-200'}">
-              ${item.start}${item.end ? ' ~ ' + item.end : ''} 
-              <span class="text-[10px] text-gray-400 font-normal">➔ 이공관 ${item.egong}</span>
-            </p>
-            <p class="text-[10px] text-gray-400">${item.note}</p>
-          </div>
-          <div class="flex items-center space-x-3">
-            <button class="toggle-alert-btn text-sm ${bellColor} transition p-1" data-key="${alertKey}" data-time="${item.start}">
-              <i class="${isAlertSet ? 'fas' : 'far'} fa-bell"></i>
-            </button>
-            <span class="text-[10px] px-2 py-0.5 rounded-full ${statusBg}">${statusText}</span>
-          </div>
-        `;
-        container.appendChild(row);
-      });
-
-      // 알림 버튼 클릭 핸들러 (실제 웹 푸시 예약 구현)
-      document.querySelectorAll('.toggle-alert-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          requestNotificationPermission(); // 권한 요청
-
-          const key = e.currentTarget.getAttribute('data-key');
-          const timeStr = e.currentTarget.getAttribute('data-time');
-          
-          if (alerts[key]) {
-            // 이미 설정된 알림 취소
-            clearTimeout(alerts[key].timerId);
-            delete alerts[key];
-            showToast(`[${timeStr}] 알림 예약이 취소되었습니다.`);
-          } else {
-            // 알림 시간 계산 (출발 5분 전)
-            const now = new Date();
-            const targetTime = new Date();
-            const [h, m] = timeStr.split(':').map(Number);
-            targetTime.setHours(h, m - 5, 0, 0); // 출발 5분 전 설정
-
-            let delay = targetTime.getTime() - now.getTime();
-
-            if (delay < 0) {
-              // 이미 시간이 지난 경우 테스트용으로 3초 뒤 발송하도록 설정
-              showToast(`지나간 시각입니다. (테스트용 3초 후 알림 발송)`);
-              delay = 3000;
-            } else {
-              showToast(`[${timeStr}] 버스 출발 5분 전 푸시 알림 설정 완료!`);
-            }
-
-            // 푸시 알림 타이머 예약
-            const timerId = setTimeout(() => {
-              sendPushNotification(
-                "🚌 강남대 셔틀버스 출발 5분 전!",
-                `잠시 후 ${timeStr}에 ${activeRoute === 'giheung' ? '기흥역 4번출구' : '스타벅스 앞'}에서 셔틀버스가 출발합니다.`
-              );
-              delete alerts[key];
-              renderTimetable();
-            }, delay);
-
-            alerts[key] = { timerId, timeStr };
-          }
-          renderTimetable();
-        });
-      });
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toast-msg').innerText = msg;
-      toast.classList.remove('opacity-0', 'pointer-events-none');
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'pointer-events-none');
-      }, 2500);
-    }
-
-    document.getElementById('route-select').addEventListener('change', (e) => {
-      activeRoute = e.target.value;
-      updateRealtimeStatus();
-      renderTimetable();
-    });
-
-    const btnMonFri = document.getElementById('btn-mon-fri');
-    const btnTueThu = document.getElementById('btn-tue-thu');
-
-    btnMonFri.addEventListener('click', () => {
-      btnMonFri.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 shadow-sm transition";
-      btnTueThu.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition";
-      activeDay = 'monFri';
-      renderTimetable();
-    });
-
-    btnTueThu.addEventListener('click', () => {
-      btnTueThu.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-800 text-knu-blue dark:text-blue-300 shadow-sm transition";
-      btnMonFri.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition";
-      activeDay = 'tueThu';
-      renderTimetable();
-    });
-
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetTab = btn.getAttribute('data-tab');
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-        document.getElementById(targetTab).classList.remove('hidden');
-
-        document.querySelectorAll('.nav-btn').forEach(b => {
-          b.classList.remove('text-knu-blue', 'dark:text-blue-400');
-          b.classList.add('text-gray-400');
-        });
-        btn.classList.add('text-knu-blue', 'dark:text-blue-400');
-        btn.classList.remove('text-gray-400');
-      });
-    });
-
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-      document.documentElement.classList.toggle('dark');
-    });
-
-    document.getElementById('notification-btn').addEventListener('click', () => {
-      document.getElementById('notif-modal').classList.remove('hidden');
-    });
-    document.getElementById('close-notif-btn').addEventListener('click', () => {
-      document.getElementById('notif-modal').classList.add('hidden');
-    });
-
-    setInterval(() => {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('current-time').innerText = `${hours}:${minutes}`;
-      
-      updateRealtimeStatus();
-    }, 1000);
-
-    autoDetectDay();
-    updateRealtimeStatus();
-    renderTimetable();
-  </script>
-
-</body>
+<footer>
+  <a href="https://www.flaticon.com/free-icons/ui" title="ui icons" target="_blank">
+    Ui icons created by meaicon - Flaticon
+  </a>
 </footer>
 
+<script>
+  // 1. 기흥역 출발 기준 기본 시간표 (HH:MM)
+  const baseTimetable = [
+    "08:30", "08:50", "09:10", "09:30", "09:50", "10:10", "10:30", "10:50",
+    "11:10", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+    "16:00", "16:30", "17:00", "17:30", "18:00"
+  ];
+
+  // 2. 정류장 목록 및 기흥역 출발 기준 누적 오프셋 분(min)
+  // 기흥역(0분) -> 강남대역(+5분) -> 샬롬관(+5분/누적10분) -> 인문사회관부터 1분씩 추가
+  const stations = [
+    { name: "기흥역4번출구", offset: 0 },
+    { name: "강남대역", offset: 5 },
+    { name: "샬롬관", offset: 10 },
+    { name: "인문사회관", offset: 11 },
+    { name: "예술관", offset: 12 },
+    { name: "후생관", offset: 13 },
+    { name: "우원관", offset: 14 },
+    { name: "본관", offset: 15 },
+    { name: "이공관", offset: 16 },
+    { name: "경천관", offset: 17 },
+    { name: "천은관", offset: 18 },
+    { name: "교육관", offset: 19 },
+    { name: "목양관", offset: 20 },
+    { name: "기숙사(심전1관)", offset: 21 },
+    { name: "기숙사(심전2관)", offset: 22 }
+  ];
+
+  // 셀렉트 박스 옵션 채우기
+  const selectEl = document.getElementById("stationSelect");
+  stations.forEach((st, index) => {
+    const opt = document.createElement("option");
+    opt.value = index;
+    opt.textContent = st.name;
+    selectEl.appendChild(opt);
+  });
+
+  // 시간을 분(Minutes)으로 변환하는 함수 ("08:30" -> 510분)
+  function timeToMinutes(timeStr) {
+    const [h, m] = timeStr.split(":").map(Number);
+    return h * 60 + m;
+  }
+
+  // 분(Minutes)을 "HH:MM" 포맷으로 변환하는 함수
+  function minutesToTime(mins) {
+    const h = String(Math.floor(mins / 60)).padStart(2, "0");
+    const m = String(mins % 60).padStart(2, "0");
+    return `${h}:${m}`;
+  }
+
+  // 화면 업데이트 함수
+  function updateSchedule() {
+    const selectedIndex = parseInt(selectEl.value);
+    const selectedStation = stations[selectedIndex];
+
+    // 현재 시각 구하기 (분 단위)
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    document.getElementById("currentStationTitle").textContent = `${selectedStation.name} 기준`;
+
+    // 선택된 정류장의 시간표 계산
+    const stationTimetable = baseTimetable.map(baseTime => {
+      return timeToMinutes(baseTime) + selectedStation.offset;
+    });
+
+    const listEl = document.getElementById("scheduleList");
+    listEl.innerHTML = "";
+
+    let nextBusMins = null;
+    let foundNext = false;
+
+    stationTimetable.forEach(busMins => {
+      const formattedTime = minutesToTime(busMins);
+      const li = document.createElement("li");
+      li.className = "schedule-item";
+
+      if (busMins < currentMins) {
+        // 이미 지나친 버스
+        li.classList.add("passed");
+        li.innerHTML = `<span>${formattedTime}</span><span>지나침</span>`;
+      } else if (!foundNext) {
+        // 지나치지 않은 첫 번째 '다음 버스'
+        foundNext = true;
+        nextBusMins = busMins;
+        li.classList.add("next");
+        const diff = busMins - currentMins;
+        li.innerHTML = `<span>${formattedTime}</span><span>${diff === 0 ? "곧 도착" : diff + "분 후 도착 예정"}</span>`;
+      } else {
+        // 그 이후의 버스들
+        li.innerHTML = `<span>${formattedTime}</span><span>대기</span>`;
+      }
+
+      listEl.appendChild(li);
+    });
+
+    // 상단 카드 실시간 남은 시간 업데이트
+    const timeLeftText = document.getElementById("timeLeftText");
+    const nextBusTimeText = document.getElementById("nextBusTimeText");
+
+    if (nextBusMins !== null) {
+      const diffMins = nextBusMins - currentMins;
+      if (diffMins === 0) {
+        timeLeftText.textContent = "🚍 잠시 후 도착!";
+      } else {
+        timeLeftText.textContent = `약 ${diffMins}분 후 도착`;
+      }
+      nextBusTimeText.textContent = `다음 버스 도착 예정 시각: ${minutesToTime(nextBusMins)}`;
+    } else {
+      timeLeftText.textContent = "오늘 운행 종료";
+      nextBusTimeText.textContent = "오늘 예정된 버스가 더 이상 없습니다.";
+    }
+  }
+
+  // 최초 실행 및 30초마다 자동 갱신 (시간 지나감 반영)
+  updateSchedule();
+  setInterval(updateSchedule, 30000);
+</script>
+
+</body>
 </html>
