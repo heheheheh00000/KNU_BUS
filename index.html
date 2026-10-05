@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>강남대학교 달구지 스마트 셔틀</title>
 
-  <!-- 1. 파비콘 & 모바일 웹 앱 설정 -->
+  <!-- 파비콘 & 모바일 웹 앱 설정 -->
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="KNU_BUS">
 
-  <!-- 2. 외부 라이브러리 (Tailwind CSS, Font Awesome) -->
+  <!-- 외부 라이브러리 (Tailwind CSS, Font Awesome) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -55,7 +55,7 @@
 
     <!-- Status Bar -->
     <div class="bg-knu-blue text-white px-6 pt-3 pb-2 flex justify-between items-center text-xs select-none">
-      <span id="current-time">00:00</span>
+      <span id="current-time">00:00:00</span>
       <div class="flex items-center space-x-2">
         <i class="fas fa-wifi"></i>
         <i class="fas fa-battery-full"></i>
@@ -114,7 +114,7 @@
           </div>
           <div class="flex justify-between items-start mb-2">
             <span id="live-status-tag" class="bg-emerald-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-sm">실시간 운행 정보</span>
-            <span class="text-xs text-blue-100 font-mono" id="live-eta-clock">다음 출발 준비 중</span>
+            <span class="text-xs text-blue-100 font-mono" id="live-eta-clock">도착 예정 정보 계산 중</span>
           </div>
           <div class="flex items-baseline space-x-2 mb-3">
             <span class="text-2xl font-extrabold" id="bus-target-station">기흥역 4번출구</span>
@@ -126,10 +126,10 @@
               <span class="font-bold text-amber-300" id="countdown-text">계산 중...</span>
             </div>
             <div class="w-full bg-black/20 rounded-full h-2 overflow-hidden">
-              <div id="progress-bar" class="bg-amber-400 h-2 rounded-full transition-all duration-500" style="width: 50%;"></div>
+              <div id="progress-bar" class="bg-amber-400 h-2 rounded-full transition-all duration-500" style="width: 0%;"></div>
             </div>
             <div class="flex justify-between items-center text-[11px] text-blue-200 pt-1">
-              <span id="current-bus-status"><i class="fas fa-clock mr-1"></i>현재 시각 기반 실시간 연동</span>
+              <span id="current-bus-status"><i class="fas fa-clock mr-1"></i>실시간 카운트다운 연동 중</span>
               <span class="text-emerald-300 font-semibold"><i class="fas fa-wifi text-[9px] mr-1"></i>정상 연동</span>
             </div>
           </div>
@@ -141,7 +141,7 @@
             <h3 class="font-bold text-sm text-gray-800 dark:text-gray-100 flex items-center">
               <i class="fas fa-route text-knu-blue dark:text-blue-400 mr-2"></i>실시간 정류장 노선도
             </h3>
-            <span class="text-[11px] text-gray-400">자동 업데이트</span>
+            <span class="text-[11px] text-gray-400">실시간 연동</span>
           </div>
 
           <div class="relative pl-6 space-y-5 my-2 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-1 before:bg-blue-100 dark:before:bg-gray-700" id="route-timeline">
@@ -199,7 +199,7 @@
             </div>
             <div class="space-y-0.5">
               <p class="text-xs text-blue-200 font-medium">재학생</p>
-              <h2 class="text-xl font-bold tracking-wide">강냉이</h2>
+              <h2 class="text-xl font-bold tracking-wide">구도경</h2>
               <p class="text-xs font-mono text-knu-gold">2026123456</p>
             </div>
           </div>
@@ -287,33 +287,34 @@
   </div>
 
   <script>
+    // 정류장별 소요 시간(분) 정의
     const routesData = {
       giheung: [
-        { name: "기흥역 4번출구", code: "START" },
-        { name: "강남대역", code: "STATION", warning: "만석 시 무정차" },
-        { name: "샬롬관", code: "SHALOM" },
-        { name: "교육관", code: "EDU1" },
-        { name: "이공관", code: "ENG" },
-        { name: "교육관", code: "EDU2" },
-        { name: "인문사회관", code: "HUMAN" },
-        { name: "강남대역(스타벅스 앞)", code: "STB" },
-        { name: "기흥역 4번출구", code: "END" }
+        { name: "기흥역 4번출구", code: "START", travelTime: 0 },
+        { name: "강남대역", code: "STATION", warning: "만석 시 무정차", travelTime: 3 },
+        { name: "샬롬관", code: "SHALOM", travelTime: 5 },
+        { name: "교육관", code: "EDU1", travelTime: 6 },
+        { name: "이공관", code: "ENG", travelTime: 7 },
+        { name: "교육관", code: "EDU2", travelTime: 8 },
+        { name: "인문사회관", code: "HUMAN", travelTime: 9 },
+        { name: "강남대역(스타벅스 앞)", code: "STB", travelTime: 12 },
+        { name: "기흥역 4번출구", code: "END", travelTime: 15 }
       ],
       starbucks: [
-        { name: "강남대역(스타벅스 앞)", code: "STB_START" },
-        { name: "샬롬관", code: "SHALOM" },
-        { name: "교육관", code: "EDU1" },
-        { name: "이공관", code: "ENG" },
-        { name: "교육관", code: "EDU2" },
-        { name: "인문사회관", code: "HUMAN" },
-        { name: "강남대역(스타벅스 앞)", code: "STB_END" }
+        { name: "강남대역(스타벅스 앞)", code: "STB_START", travelTime: 0 },
+        { name: "샬롬관", code: "SHALOM", travelTime: 2 },
+        { name: "교육관", code: "EDU1", travelTime: 3 },
+        { name: "이공관", code: "ENG", travelTime: 4 },
+        { name: "교육관", code: "EDU2", travelTime: 5 },
+        { name: "인문사회관", code: "HUMAN", travelTime: 6 },
+        { name: "강남대역(스타벅스 앞)", code: "STB_END", travelTime: 8 }
       ]
     };
 
     const rawSchedules = {
       giheung: {
         monFri: [
-          { start: "08:00", end: "09:00", egong: "08:10~09:10", note: "10회 운행" },
+          { start: "08:00", end: "09:00", egong: "08:10~09:10", note: "10분 간격 운행" },
           { start: "10:30", egong: "10:40", note: "일반 운행" },
           { start: "10:50", egong: "11:00", note: "일반 운행" },
           { start: "11:00", egong: "11:10", note: "일반 운행" },
@@ -330,7 +331,7 @@
           { start: "17:20", egong: "17:50", note: "막차" }
         ],
         tueThu: [
-          { start: "08:00", end: "09:00", egong: "08:10~09:10", note: "19회 운행" },
+          { start: "08:00", end: "09:00", egong: "08:10~09:10", note: "10분 간격 운행" },
           { start: "10:30", egong: "10:40", note: "일반 운행" },
           { start: "10:40", egong: "10:50", note: "일반 운행" },
           { start: "10:50", egong: "11:00", note: "일반 운행" },
@@ -375,6 +376,42 @@
     let activeDay = 'monFri';
     let alerts = {}; 
 
+    // 시간 문자열 -> 밀리초 변환
+    function timeStringToTimestamp(timeStr) {
+      const now = new Date();
+      const [h, m] = timeStr.split(':').map(Number);
+      const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+      return target.getTime();
+    }
+
+    // 시간표 목록 전체를 개별 출발 시각 배열로 분해
+    function getExpandedDepartureTimes(routeKey, dayKey) {
+      const scheduleList = rawSchedules[routeKey][dayKey];
+      const result = [];
+
+      scheduleList.forEach(item => {
+        if (item.end) {
+          let startTs = timeStringToTimestamp(item.start);
+          const endTs = timeStringToTimestamp(item.end);
+          while (startTs <= endTs) {
+            const d = new Date(startTs);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            result.push({ timeStr: `${hh}:${mm}`, timestamp: startTs, note: item.note });
+            startTs += 10 * 60 * 1000; // 10분 간격
+          }
+        } else {
+          result.push({
+            timeStr: item.start,
+            timestamp: timeStringToTimestamp(item.start),
+            note: item.note
+          });
+        }
+      });
+
+      return result.sort((a, b) => a.timestamp - b.timestamp);
+    }
+
     // 웹 푸시 알림 권한 요청
     function requestNotificationPermission() {
       if ('Notification' in window) {
@@ -409,15 +446,10 @@
       }
     }
 
-    function timeToMinutes(timeStr) {
-      if(!timeStr) return 0;
-      const [h, m] = timeStr.split(':').map(Number);
-      return h * 60 + m;
-    }
-
+    // 실시간 남은 시간 및 도착 예정 시간 실시간 계산
     function updateRealtimeStatus() {
       const now = new Date();
-      const currentMin = now.getHours() * 60 + now.getMinutes();
+      const nowTs = now.getTime();
       const isWeekend = (now.getDay() === 0 || now.getDay() === 6);
 
       const targetStationName = activeRoute === 'giheung' ? '기흥역 4번출구' : '스타벅스 앞';
@@ -428,61 +460,80 @@
         document.getElementById('live-status-tag').className = 'bg-gray-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
         document.getElementById('next-bus-time-text').innerText = '운행 없음';
         document.getElementById('countdown-text').innerText = '주말 미운행';
+        document.getElementById('live-eta-clock').innerText = '운행 일정 없음';
         document.getElementById('progress-bar').style.width = '0%';
-        renderTimeline(activeRoute, -1);
+        renderTimeline(activeRoute, -1, 0);
         return;
       }
 
-      const currentSchedule = rawSchedules[activeRoute][activeDay];
-      let nextBus = null;
+      const departures = getExpandedDepartureTimes(activeRoute, activeDay);
+      const totalTripDuration = routesData[activeRoute][routesData[activeRoute].length - 1].travelTime * 60 * 1000;
 
-      for (let item of currentSchedule) {
-        const startMin = timeToMinutes(item.start);
-        const endMin = item.end ? timeToMinutes(item.end) : startMin + 20;
+      // 이미 지나간 버스는 거르고 다음 출발 버스 및 현재 운행 중인 버스 검색
+      let nextDeparture = departures.find(d => d.timestamp > nowTs);
+      let runningBus = departures.find(d => nowTs >= d.timestamp && nowTs <= d.timestamp + totalTripDuration);
 
-        if (currentMin <= endMin) {
-          nextBus = { ...item, startMin, endMin };
-          break;
+      if (runningBus) {
+        // 버스가 현재 도로를 운행 중인 경우
+        const elapsedMs = nowTs - runningBus.timestamp;
+        const elapsedMinutes = elapsedMs / (1000 * 60);
+
+        document.getElementById('live-status-tag').innerText = '실시간 운행 중';
+        document.getElementById('live-status-tag').className = 'bg-emerald-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full animate-pulse';
+        document.getElementById('next-bus-time-text').innerText = `${runningBus.timeStr} 버스 운행 중`;
+        document.getElementById('countdown-text').innerText = `운행 진행 중 (${Math.floor(elapsedMinutes)}분 경과)`;
+        document.getElementById('live-eta-clock').innerText = `출발시각: ${runningBus.timeStr}`;
+        
+        const progressPercent = Math.min(100, Math.max(5, (elapsedMs / totalTripDuration) * 100));
+        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+        // 현재 진행 정류장 계산
+        const stations = routesData[activeRoute];
+        let currentStationIdx = 0;
+        for (let i = 0; i < stations.length; i++) {
+          if (elapsedMinutes >= stations[i].travelTime) {
+            currentStationIdx = i;
+          }
         }
-      }
+        renderTimeline(activeRoute, currentStationIdx, runningBus.timestamp);
 
-      if (!nextBus) {
+      } else if (nextDeparture) {
+        // 다음 출발 대기 중인 버스가 있는 경우
+        const diffMs = nextDeparture.timestamp - nowTs;
+        const diffTotalSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffTotalSec / 60);
+        const diffSec = diffTotalSec % 60;
+
+        document.getElementById('live-status-tag').innerText = '운행 대기 중';
+        document.getElementById('live-status-tag').className = 'bg-blue-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
+        document.getElementById('next-bus-time-text').innerText = `${nextDeparture.timeStr} 출발`;
+        document.getElementById('countdown-text').innerText = `${diffMin}분 ${diffSec}초 후 출발`;
+        document.getElementById('live-eta-clock').innerText = `도착 예정: ${nextDeparture.timeStr}`;
+
+        const progressPercent = Math.max(5, Math.min(100, 100 - (diffMin * 5)));
+        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+        renderTimeline(activeRoute, 0, nextDeparture.timestamp);
+
+      } else {
+        // 오늘 모든 운행이 끝난 경우
         document.getElementById('live-status-tag').innerText = '운행 종료';
         document.getElementById('live-status-tag').className = 'bg-gray-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
         document.getElementById('next-bus-time-text').innerText = '금일 운행 종료';
-        document.getElementById('countdown-text').innerText = '운행 종료';
+        document.getElementById('countdown-text').innerText = '오늘 운행 완료';
+        document.getElementById('live-eta-clock').innerText = '운행 종료';
         document.getElementById('progress-bar').style.width = '100%';
-        renderTimeline(activeRoute, -1);
-      } else {
-        const diff = nextBus.startMin - currentMin;
 
-        if (diff > 0) {
-          document.getElementById('live-status-tag').innerText = '운행 대기 중';
-          document.getElementById('live-status-tag').className = 'bg-blue-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full';
-          document.getElementById('next-bus-time-text').innerText = `${nextBus.start} 출발`;
-          document.getElementById('countdown-text').innerText = `${diff}분 후 출발`;
-          const progress = Math.max(10, 100 - (diff * 5));
-          document.getElementById('progress-bar').style.width = `${Math.min(100, progress)}%`;
-          renderTimeline(activeRoute, 0);
-        } else {
-          document.getElementById('live-status-tag').innerText = '실시간 운행 중';
-          document.getElementById('live-status-tag').className = 'bg-emerald-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full animate-pulse';
-          document.getElementById('next-bus-time-text').innerText = `${nextBus.start} 버스`;
-          document.getElementById('countdown-text').innerText = '운행 중';
-          document.getElementById('progress-bar').style.width = '60%';
-          
-          const elapsed = currentMin - nextBus.startMin;
-          const totalStations = routesData[activeRoute].length;
-          const currentStationIdx = Math.min(totalStations - 1, Math.floor(elapsed / 2) + 1);
-          renderTimeline(activeRoute, currentStationIdx);
-        }
+        renderTimeline(activeRoute, -1, 0);
       }
     }
 
-    function renderTimeline(routeKey, busPositionIndex) {
+    // 실시간 정류장 타임라인 렌더링
+    function renderTimeline(routeKey, busPositionIndex, departureTs) {
       const container = document.getElementById('route-timeline');
       container.innerHTML = '';
       const stations = routesData[routeKey];
+      const nowTs = new Date().getTime();
 
       stations.forEach((st, idx) => {
         const item = document.createElement('div');
@@ -490,6 +541,24 @@
         
         const isBusHere = (idx === busPositionIndex);
         const passed = (busPositionIndex >= 0 && idx < busPositionIndex);
+
+        // 정류장별 실시간 도착 예정 시간 계산
+        let estimatedTimeText = '';
+        if (departureTs > 0) {
+          const stationArrivalTs = departureTs + (st.travelTime * 60 * 1000);
+          const etaDate = new Date(stationArrivalTs);
+          const etaH = String(etaDate.getHours()).padStart(2, '0');
+          const etaM = String(etaDate.getMinutes()).padStart(2, '0');
+          
+          if (passed) {
+            estimatedTimeText = `<span class="text-[10px] text-gray-400">통과</span>`;
+          } else if (isBusHere) {
+            estimatedTimeText = `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">진입 중 (${etaH}:${etaM})</span>`;
+          } else {
+            const remainMin = Math.max(0, Math.ceil((stationArrivalTs - nowTs) / (1000 * 60)));
+            estimatedTimeText = `<span class="text-[10px] text-blue-600 dark:text-blue-300 font-semibold">${etaH}:${etaM} (${remainMin}분 후)</span>`;
+          }
+        }
 
         let nodeIcon = `<div class="absolute -left-[23px] w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-gray-800"></div>`;
         if (isBusHere) {
@@ -510,12 +579,13 @@
               ${st.warning ? `<span class="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.2 rounded ml-1 font-normal">${st.warning}</span>` : ''}
             </p>
           </div>
-          ${isBusHere ? `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">실시간 위치</span>` : ''}
+          <div>${estimatedTimeText}</div>
         `;
         container.appendChild(item);
       });
     }
 
+    // 시간표 TAB 렌더링
     function renderTimetable() {
       const container = document.getElementById('timetable-list');
       container.innerHTML = '';
@@ -523,23 +593,22 @@
       const routeNameLabel = activeRoute === 'giheung' ? '기흥역(4번 출구)' : '스타벅스 앞';
       document.getElementById('timetable-title-label').innerText = `[${routeNameLabel}] 운행시간표`;
 
-      const now = new Date();
-      const currentMin = now.getHours() * 60 + now.getMinutes();
+      const nowTs = new Date().getTime();
       const list = rawSchedules[activeRoute][activeDay];
 
       list.forEach((item, index) => {
         const row = document.createElement('div');
-        const startMin = timeToMinutes(item.start);
-        const endMin = item.end ? timeToMinutes(item.end) : startMin + 15;
+        const startTs = timeStringToTimestamp(item.start);
+        const endTs = item.end ? timeStringToTimestamp(item.end) : startTs + (15 * 60 * 1000);
 
         let statusText = "예정";
         let statusBg = "bg-emerald-100 text-emerald-700";
         let isCurrent = false;
 
-        if (currentMin > endMin) {
+        if (nowTs > endTs) {
           statusText = "운행 완료";
           statusBg = "bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300";
-        } else if (currentMin >= startMin && currentMin <= endMin) {
+        } else if (nowTs >= startTs && nowTs <= endTs) {
           statusText = "운행 중";
           statusBg = "bg-knu-blue text-white";
           isCurrent = true;
@@ -569,7 +638,7 @@
         container.appendChild(row);
       });
 
-      // 알림 버튼 클릭 이벤트
+      // 알림 버튼 예약 등록/취소 이벤트
       document.querySelectorAll('.toggle-alert-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           requestNotificationPermission();
@@ -675,7 +744,7 @@
       }, 2500);
     }
 
-    // 모바일 학생증 QR 코드 타이머 연동
+    // 모바일 학생증 QR 코드 타이머
     let qrTimeLeft = 30;
     let qrInterval = null;
 
@@ -715,6 +784,7 @@
       btnTueThu.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition";
       activeDay = 'monFri';
       renderTimetable();
+      updateRealtimeStatus();
     });
 
     btnTueThu.addEventListener('click', () => {
@@ -722,6 +792,7 @@
       btnMonFri.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-400 transition";
       activeDay = 'tueThu';
       renderTimetable();
+      updateRealtimeStatus();
     });
 
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -763,17 +834,18 @@
       document.getElementById('notif-modal').classList.add('hidden');
     });
 
-    // 1초 단위 상단 시계 및 실시간 현황 업데이트
+    // 1초 단위 실시간 시계 및 카운트다운 인터벌
     setInterval(() => {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('current-time').innerText = `${hours}:${minutes}`;
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('current-time').innerText = `${hours}:${minutes}:${seconds}`;
       
       updateRealtimeStatus();
     }, 1000);
 
-    // 초기화 함수 실행
+    // 초기 실행
     autoDetectDay();
     updateRealtimeStatus();
     renderTimetable();
